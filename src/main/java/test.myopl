@@ -1,0 +1,75 @@
+#*
+  Multi-line comment test:
+  this whole block should be ignored,
+  including symbols like (Logic & Return) and keywords WHILE/FOR.
+*#
+# 1. Variables and Math
+VAR x = 10
+VAR y = (x * 5) / 2
+PRINT("Math Test (Expected 25):", y)
+
+# 2. Strings and Concatenation
+VAR name = "User"
+PRINT("Hello " + name + "!")
+
+# 3. Lists and Built-ins
+VAR myList = [1, 2, 3, 4]
+PRINT("List Length (Expected 4):", LEN(myList))
+
+# 4. Functions (Single-line)
+FUN square(n) -> n * n
+PRINT("Square of 4 (Expected 16):", square(4))
+
+# 5. Functions (Logic & Return)
+FUN checkStatus(val) ->
+    IF val > 20 THEN "High" ELSE "Low"
+
+PRINT("Status Check (Expected High):", checkStatus(y))
+
+# 6. Loops (FOR)
+PRINT("Counting 1 to 3:")
+FOR i = 1 TO 3 THEN
+    PRINT("Count:", i)
+
+# 7. Loops (WHILE)
+VAR count = 0
+WHILE count < 2 THEN BEGIN
+    VAR count = count + 1
+    PRINT("While Loop iteration:", count)
+END
+
+# 8. File I/O (non-interactive, safe to run)
+VAR path = "myopl_io_demo.txt"
+WRITE_FILE(path, "Hello from MyOPL!")
+PRINT("File contents after WRITE_FILE:", READ_FILE(path))
+APPEND_FILE(path, " Appended line.")
+PRINT("File contents after APPEND_FILE:", READ_FILE(path))
+
+# 9. Console I/O examples (commented out so this file runs non-interactively).
+#    Uncomment any block below to try it in the REPL or a script.
+
+VAR userName = INPUT("Enter your name: ")
+PRINT("Hello", userName)
+
+VAR userAge = INPUT_NUM("Enter your age: ")
+IF userAge >= 18 THEN PRINT("Adult") ELSE PRINT("Minor")
+
+
+# 10. Class Definition
+CLASS Calculator BEGIN
+    FUN add(a, b) -> a + b
+    FUN subtract(a, b) -> a - b
+    FUN isPositive(n) -> IF n > 0 THEN "Yes" ELSE "No"
+    VAR version = 2.0
+END
+PRINT("Class add (Expected 15.0):", Calculator.add(10, 5))
+PRINT("Class subtract (Expected 5.0):", Calculator.subtract(10, 5))
+PRINT("Class field (Expected 2.0):", Calculator.version)
+PRINT("Class IF method (Expected Yes):", Calculator.isPositive(7))
+
+# 11. Import
+IMPORT "MathHelper.myopl"
+PRINT("Imported add (Expected 7.0):", MathHelper.add(3, 4))
+PRINT("Imported multiply (Expected 12.0):", MathHelper.multiply(3, 4))
+PRINT("Imported square (Expected 25.0):", MathHelper.square(5))
+PRINT("Imported field PI (Expected 3.14159):", MathHelper.PI)

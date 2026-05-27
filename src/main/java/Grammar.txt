@@ -1,0 +1,112 @@
+=========================================
+      MYOPL LANGUAGE SPECIFICATION
+=========================================
+
+KEYWORDS:
+  VAR, FUN, RETURN, IF, THEN, ELSE, FOR, TO, STEP, WHILE, BEGIN, END, CLASS, IMPORT
+
+COMMENTS:
+  # ...           Single-line comment. Everything from # to end of line is ignored.
+  #* ... *#       Multi-line comment. Everything between #* and *# is ignored, may span lines.
+
+BUILT-IN FUNCTIONS:
+  Console:
+    PRINT(val1, val2...)     - Writes values to console, separated by spaces, with newline.
+    INPUT(prompt?)           - Prompts (optional) and reads one line from stdin. Returns String.
+    INPUT_NUM(prompt?)       - Prompts (optional) and reads one line, parsed as a Number. Bad input -> 0.
+
+  Files:
+    READ_FILE(path)          - Reads the file at `path` and returns its full contents as a String.
+    WRITE_FILE(path, text)   - Overwrites (or creates) the file at `path` with `text`. Returns 1.
+    APPEND_FILE(path, text)  - Appends `text` to the file at `path` (creates if missing). Returns 1.
+
+  Lists:
+    LEN(list)                - Returns number of elements in a list.
+
+EXAMPLES:
+  # Console I/O
+  VAR name = INPUT("Your name? ")
+  PRINT("Hello", name)
+
+  VAR age = INPUT_NUM("Your age? ")
+  IF age >= 18 THEN PRINT("Adult") ELSE PRINT("Minor")
+
+  # File I/O
+  WRITE_FILE("greeting.txt", "Hello " + name + "!")
+  VAR contents = READ_FILE("greeting.txt")
+  PRINT("File says:", contents)
+  APPEND_FILE("greeting.txt", " You are " + age + " years old.")
+
+OPERATORS:
+  Math:       +, -, *, /
+  Comparison: ==, !=, <, >, <=, >=
+  Logic:      -> (Arrow), = (Assignment)
+  Grouping:   ( ), [ ], BEGIN...END
+  Member:     . (dot — accesses a class field or method)
+
+GRAMMAR:
+  Expression -> VAR ID = Expr | IF Expr THEN Expr (ELSE Expr)?
+                | FOR ID = Expr TO Expr (STEP Expr)? THEN Expr
+                | WHILE Expr THEN Expr | RETURN Expr
+                | CLASS ID BEGIN Expr* END
+                | IMPORT STRING
+                | Comparison
+  Comparison -> Arithmetic ((EE | NE | LT | GT | LTE | GTE) Arithmetic)*
+  Arithmetic -> Term ((PLUS | MINUS) Term)*
+  Term       -> Factor ((MUL | DIV) Factor)*
+  Factor     -> Atom ( (args) | .ID )*
+  Atom       -> INT | FLOAT | STRING | ID | [list] | (Expr) | FunDef | BEGIN...END
+
+=========================================
+      CLASSES AND MODULES
+=========================================
+
+CLASS:
+  CLASS ClassName BEGIN
+      FUN method(args) -> body
+      VAR field = value
+  END
+
+  - Declares a named class. Everything between BEGIN and END is the class body.
+  - Functions and variables defined inside become members of the class.
+  - Members are accessed with dot notation: ClassName.member
+  - The class body runs in an isolated scope; outer variables are not visible inside.
+  - Class methods receive their sibling members in scope, so one method can call another.
+
+  EXAMPLES:
+    CLASS Greeter BEGIN
+        FUN hello(name) -> "Hello, " + name + "!"
+        VAR version = 1.0
+    END
+    PRINT(Greeter.hello("World"))        # Hello, World!
+    PRINT("Version:", Greeter.version)   # Version: 1.0
+
+    CLASS MathUtils BEGIN
+        FUN double(n) -> n * 2
+        FUN isEven(n) -> IF n * 1 == (n / 2) * 2 THEN "even" ELSE "odd"
+        VAR E = 2.71828
+    END
+    PRINT(MathUtils.double(7))           # 14.0
+    PRINT(MathUtils.E)                   # 2.71828
+
+IMPORT:
+  IMPORT "path/to/File.myopl"
+
+  - Reads and executes the target .myopl file.
+  - Every class (and top-level symbol) defined in that file is merged into the
+    current scope — equivalent to pasting the file's source right here.
+  - The path may be relative (resolved from the directory of the running script)
+    or absolute.
+  - Circular imports are not detected; avoid them.
+
+  EXAMPLE (assuming MathHelper.myopl defines CLASS MathHelper):
+    IMPORT "MathHelper.myopl"
+    PRINT(MathHelper.add(3, 4))          # 7.0
+    PRINT(MathHelper.PI)                 # 3.14159
+
+=========================================
+      HOW TO RUN
+=========================================
+1. Compile: javac Shell.java lang/*.java
+2. REPL:    java Shell
+3. File:    java Shell script.myopl
