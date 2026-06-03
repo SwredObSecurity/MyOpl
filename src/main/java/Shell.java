@@ -1,11 +1,14 @@
 import lang.*;
 import java.util.*;
 import java.nio.file.*;
+import java.util.stream.Stream;
 
 public class Shell {
     private static final Interpreter interpreter = new Interpreter();
+    private static final String SCL_DIR_NAME = "SCL";
 
     public static void main(String[] args) {
+        loadStandardClassLibrary();
         Scanner sc = new Scanner(System.in);
         System.out.print("File path (blank for REPL): ");
         String path = sc.hasNextLine() ? sc.nextLine() : "";
@@ -32,6 +35,42 @@ public class Shell {
                 if (!in.isBlank()) execute(in, true);
             }
         }
+    }
+
+    private static void loadStandardClassLibrary() {
+        Path sclDir = locateSclDir();
+        if (sclDir == null || !Files.isDirectory(sclDir)) return;
+        interpreter.setBaseDir(sclDir.toString());
+        try (Stream<Path> stream = Files.list(sclDir)) {
+            stream.filter(p -> p.toString().toLowerCase().endsWith(".myopl"))
+                  .sorted()
+                  .forEach(Shell::loadSclFile);
+        } catch (Exception e) {
+            System.out.println("SCL scan error: " + e.getMessage());
+        }
+    }
+
+    private static void loadSclFile(Path file) {
+        try {
+            String code = Files.readString(file);
+            execute(code, false);
+        } catch (Exception e) {
+            System.out.println("SCL load error (" + file.getFileName() + "): " + e.getMessage());
+        }
+    }
+
+    private static Path locateSclDir() {
+        try {
+            Path origin = Path.of(Shell.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI());
+            if (Files.isRegularFile(origin)) origin = origin.getParent();
+            for (Path p = origin; p != null; p = p.getParent()) {
+                Path candidate = p.resolve(SCL_DIR_NAME);
+                if (Files.isDirectory(candidate)) return candidate;
+            }
+        } catch (Exception ignored) {}
+        Path cwd = Path.of("").toAbsolutePath().resolve(SCL_DIR_NAME);
+        return Files.isDirectory(cwd) ? cwd : null;
     }
 
     private static void execute(String code, boolean printResult) {
