@@ -1,0 +1,310 @@
+● Phase 1 — All the classes you need to build
+
+  Section A: Must be done in order
+
+  1. Math
+
+  The only class that must come first. Everything else that needs sqrt, pow, or mod will call into this class, so it has to exist before those work.
+
+  - Constants (values that never change)
+    - PI = 3.14159265358979 — the ratio used for circles
+    - E = 2.71828182845904 — the natural growth number
+    - TAU = 6.28318530717958 — two times PI, often nicer for full-circle math
+    - PHI = 1.61803398874989 — the golden ratio
+    - SQRT2 = 1.41421356237309 — the square root of 2
+    - LN2 = 0.69314718055994 — natural log of 2
+    - LN10 = 2.30258509299404 — natural log of 10
+  - Simple helpers
+    - abs(n) — strips the negative sign (always returns a positive number)
+    - sign(n) — returns 1 if positive, -1 if negative, 0 if zero
+    - min(a, b) — gives back whichever number is smaller
+    - max(a, b) — gives back whichever number is larger
+    - clamp(n, lo, hi) — keeps n between lo and hi, pushing it inside if it's out
+    - negate(n) — flips the sign (positive becomes negative and vice versa)
+    - half(n) — divides by 2
+    - square(n) — multiplies a number by itself once
+    - cube(n) — multiplies a number by itself twice
+    - average(a, b) — gives the middle of the two
+    - isPositive(n) — returns 1 if n is greater than 0, else 0
+    - isNegative(n) — returns 1 if n is less than 0, else 0
+    - isZero(n) — returns 1 if n equals 0, else 0
+  - Useful extras
+    - lerp(a, b, t) — smooth blend from a to b (t=0 gives a, t=1 gives b)
+    - inverseLerp(a, b, v) — given a value between a and b, returns what t (0 to 1) it sits at
+    - remap(v, fromLo, fromHi, toLo, toHi) — converts a value from one range into the matching point of another range
+    - approxEqual(a, b, eps) — returns 1 if a and b are within eps of each other (computer math has small errors, this hides them)
+  - Loop-based math (these are the ones the rest of the library will rely on)
+    - sqrt(n) — square root, built with a 20-step Newton's method loop
+    - pow(base, exp) — multiplies base by itself exp times (whole-number exponents)
+    - factorial(n) — 1 × 2 × 3 × ... × n
+    - mod(a, b) — the remainder after dividing a by b (whole positive numbers)
+
+  ---
+  Section B: Order doesn't matter (build these in any order after Math)
+
+  These classes don't need each other. You can build them in any sequence. Four of them (Geometry, Physics, Finance, Calendar) call into Math, so make sure
+  Math is finished before testing those.
+
+  ---
+  Bool
+
+  Makes 1/0 read like true/false in user code.
+
+  - Constants
+    - TRUE = 1 — represents truth
+    - FALSE = 0 — represents falsehood
+  - Functions
+    - not(b) — flips truth into falsehood and back
+    - and(a, b) — true only if both inputs are true
+    - or(a, b) — true if either input is true
+    - xor(a, b) — true if exactly one is true (not both)
+    - nand(a, b) — opposite of and
+    - nor(a, b) — opposite of or
+    - implies(a, b) — false only when a is true but b is false
+    - iff(a, b) — true when both inputs match
+    - toString(b) — gives back the text "true" or "false"
+
+  ---
+  Compare
+
+  Reads more naturally than raw operators in some places.
+
+  - Functions
+    - eq(a, b) — equal?
+    - neq(a, b) — not equal?
+    - lt(a, b) — a less than b?
+    - gt(a, b) — a greater than b?
+    - lte(a, b) — a less than or equal to b?
+    - gte(a, b) — a greater than or equal to b?
+    - between(x, lo, hi) — is x somewhere between lo and hi (inclusive)?
+    - inRange(x, lo, hi) — same as between, just a different name people often expect
+    - max3(a, b, c) — largest of three numbers
+    - min3(a, b, c) — smallest of three numbers
+    - clamp(x, lo, hi) — same as Math's clamp, available here too
+    - approxEqual(a, b, eps) — close enough?
+
+  ---
+  Convert
+
+  Real-world unit conversions.
+
+  - Temperature
+    - celsiusToFahrenheit(c) — °C into °F
+    - fahrenheitToCelsius(f) — °F into °C
+    - celsiusToKelvin(c) — °C into K
+    - kelvinToCelsius(k) — K into °C
+    - fahrenheitToKelvin(f) — °F into K
+    - kelvinToFahrenheit(k) — K into °F
+  - Length
+    - milesToKm(m) — miles into kilometers
+    - kmToMiles(k) — kilometers into miles
+    - feetToMeters(ft) — feet into meters
+    - metersToFeet(m) — meters into feet
+    - inchesToCm(i) — inches into centimeters
+    - cmToInches(c) — centimeters into inches
+    - yardsToMeters(y) — yards into meters
+    - metersToYards(m) — meters into yards
+  - Mass
+    - kgToPounds(kg) — kilograms into pounds
+    - poundsToKg(lb) — pounds into kilograms
+    - gramsToOunces(g) — grams into ounces
+    - ouncesToGrams(oz) — ounces into grams
+  - Time
+    - secondsToMinutes(s) — seconds into minutes
+    - minutesToSeconds(m) — minutes into seconds
+    - minutesToHours(m) — minutes into hours
+    - hoursToMinutes(h) — hours into minutes
+    - hoursToSeconds(h) — hours into seconds
+    - secondsToHours(s) — seconds into hours
+    - daysToHours(d) — days into hours
+    - hoursToDays(h) — hours into days
+    - daysToSeconds(d) — days into seconds
+  - Angle
+    - degreesToRadians(d) — degrees into radians
+    - radiansToDegrees(r) — radians into degrees
+  - Data size
+    - bytesToKB(b) — bytes into kilobytes
+    - kbToMB(k) — kilobytes into megabytes
+    - mbToGB(m) — megabytes into gigabytes
+    - gbToTB(g) — gigabytes into terabytes
+    - bytesToMB(b) — bytes straight to megabytes
+    - bytesToGB(b) — bytes straight to gigabytes
+
+  ---
+  Logging
+
+  Friendlier-looking print statements.
+
+  - Functions
+    - info(msg) — prints [INFO] msg
+    - warn(msg) — prints [WARN] msg
+    - error(msg) — prints [ERROR] msg
+    - debug(msg) — prints [DEBUG] msg
+    - success(msg) — prints [OK] msg
+    - divider() — prints a row of dashes
+    - banner(msg) — prints a divider, then the message, then another divider
+    - step(n, msg) — prints [n] msg, useful for numbered progress
+    - blank() — prints an empty line for spacing
+
+  ---
+  Constants
+
+  A grab-bag of common values everyone uses, in one easy place.
+
+  - Math constants
+    - PI = 3.14159265358979
+    - E = 2.71828182845904
+    - TAU = 6.28318530717958
+    - PHI = 1.61803398874989
+  - Physics constants
+    - GRAVITY_EARTH = 9.81 — Earth's gravity in m/s²
+    - SPEED_OF_LIGHT = 299792458 — meters per second
+  - Time constants
+    - MINUTE_SECONDS = 60
+    - HOUR_SECONDS = 3600
+    - DAY_SECONDS = 86400
+    - WEEK_DAYS = 7
+    - YEAR_DAYS = 365
+  - Library info
+    - VERSION = 1.0 — version of your SCL
+
+  ---
+  Assert
+
+  Tools for checking your other classes actually do what they say.
+
+  - Functions
+    - assertEqual(actual, expected, label) — prints PASS if equal, FAIL with details otherwise
+    - assertNotEqual(actual, unexpected, label) — passes when the two are different
+    - assertTrue(condition, label) — passes if the condition is non-zero
+    - assertFalse(condition, label) — passes if the condition is zero
+    - assertApprox(actual, expected, eps, label) — like assertEqual but allows a tiny gap (use for sqrt, pow, etc.)
+    - assertPositive(n, label) — passes if n is greater than 0
+    - assertNegative(n, label) — passes if n is less than 0
+    - assertZero(n, label) — passes if n is exactly 0
+
+  ---
+  FileIO
+
+  Nicer names and small extras on top of the built-in file functions.
+
+  - Functions
+    - read(path) — returns the file's contents
+    - write(path, text) — overwrites the file with text
+    - append(path, text) — adds text to the end of the file
+    - clear(path) — empties the file
+    - copy(from, to) — reads one file and writes its contents into another
+    - writeAndConfirm(path, text) — writes the file and prints a confirmation message
+
+  ---
+  Geometry (uses Math.sqrt and Math.SQRT2)
+
+  Areas, perimeters, volumes, distances.
+
+  - Circle
+    - circleArea(r) — area inside a circle
+    - circleCircumference(r) — perimeter of a circle
+    - circleDiameter(r) — line across the middle
+  - Sphere
+    - sphereVolume(r) — how much fits inside
+    - sphereSurfaceArea(r) — how much wrapping it needs
+  - Rectangle
+    - rectangleArea(w, h) — area of a rectangle
+    - rectanglePerimeter(w, h) — distance around the edge
+    - rectangleDiagonal(w, h) — corner-to-corner distance
+  - Square
+    - squareArea(side) — area of a square
+    - squarePerimeter(side) — distance around all four sides
+    - squareDiagonal(side) — corner-to-corner distance
+  - Triangle
+    - triangleArea(base, height) — area from base and height
+    - triangleAreaHeron(a, b, c) — area from three side lengths
+    - trianglePerimeter(a, b, c) — sum of all three sides
+  - Cube
+    - cubeVolume(s) — volume of a cube
+    - cubeSurfaceArea(s) — area of all six faces
+  - Distance
+    - distance2D(x1, y1, x2, y2) — straight-line distance between two points
+    - distanceSquared(x1, y1, x2, y2) — same but skips the square root (faster when you just need to compare)
+    - pythagorean(a, b) — long side of a right triangle given the two short sides
+
+  ---
+  Physics (uses Math.sqrt)
+
+  Classroom physics formulas.
+
+  - Constants
+    - G_EARTH = 9.81 — Earth's gravity (m/s²)
+    - G_MOON = 1.62 — Moon's gravity (m/s²)
+    - G_MARS = 3.71 — Mars's gravity (m/s²)
+    - SPEED_OF_LIGHT = 299792458 — m/s
+    - SPEED_OF_SOUND_AIR = 343 — m/s (in air at 20°C)
+  - Functions
+    - force(m, a) — F = mass × acceleration
+    - kineticEnergy(m, v) — energy of a moving object
+    - potentialEnergy(m, h) — energy of a raised object on Earth
+    - momentum(m, v) — mass × velocity
+    - workDone(f, d) — force applied across a distance
+    - mechanicalPower(w, t) — work done per unit time
+    - pressure(f, a) — force over an area
+    - density(m, v) — mass per volume
+    - weight(m) — mass × Earth's gravity
+    - velocity(d, t) — distance covered per time
+    - acceleration(dv, dt) — change in velocity over change in time
+
+  ---
+  Finance (uses Math.pow)
+
+  Everyday money math.
+
+  - Functions
+    - simpleInterest(p, r, t) — flat interest earned: p × r × t / 100
+    - compoundInterest(p, r, t) — interest with reinvestment after t years
+    - futureValue(p, r, t) — what p grows into at rate r after t years
+    - presentValue(fv, r, t) — what amount today equals fv later
+    - percentOf(n, p) — p percent of n
+    - percentChange(oldVal, newVal) — percent gain or loss
+    - discount(price, off) — sale price after taking off percent off
+    - tax(amount, rate) — total cost after adding tax
+    - tip(bill, percent) — tip amount only (not the total)
+    - markup(cost, percent) — selling price after adding markup
+
+  ---
+  Calendar (uses Math.mod)
+
+  Date and time math (no real clock — just numbers and rules).
+
+  - Constants
+    - SECONDS_IN_MINUTE = 60
+    - MINUTES_IN_HOUR = 60
+    - HOURS_IN_DAY = 24
+    - DAYS_IN_WEEK = 7
+    - MONTHS_IN_YEAR = 12
+    - DAYS_IN_YEAR = 365
+    - DAYS_IN_LEAP_YEAR = 366
+    - WEEKS_IN_YEAR = 52
+    - SECONDS_IN_HOUR = 3600
+    - SECONDS_IN_DAY = 86400
+    - SECONDS_IN_WEEK = 604800
+  - Functions
+    - daysInMonth(m) — returns 28, 30, or 31 depending on month number
+    - isLeapYear(y) — returns 1 if y is a leap year, else 0
+    - quarterOf(month) — returns 1, 2, 3, or 4
+    - isWeekend(dayOfWeek) — returns 1 if it's Saturday (6) or Sunday (7)
+
+  ---
+  Recap of the build order
+
+  1. Math (must be first)
+  2. Everything below in any order you like:
+    - Bool
+    - Compare
+    - Convert
+    - Logging
+    - Constants
+    - Assert
+    - FileIO
+    - Geometry (needs Math)
+    - Physics (needs Math)
+    - Finance (needs Math)
+    - Calendar (needs Math)

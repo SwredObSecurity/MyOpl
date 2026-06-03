@@ -1,0 +1,230 @@
+● Your roadmap for building MyOpl's Standard Class Library
+
+  I'll explain everything from the top, in plain language. No prior knowledge assumed.
+
+  ---
+  1. What we already built (and what it means)
+
+  Your language MyOpl has a feature called CLASS — it lets you group related tools together under one name. For example, the test file we made earlier looked
+  like this:
+
+  CLASS StringUtil BEGIN
+      FUN greet(name) -> "Hello, " + name + "!"
+      VAR version = 1.0
+  END
+
+  That defines a "toolbox" called StringUtil with one function (greet) and one value (version). Any MyOpl program could then write StringUtil.greet("World")
+  and get back "Hello, World!".
+
+  Normally, to use a class from another file, the programmer has to write IMPORT "somefile.myopl" at the top of their program. We just changed Shell.java so
+  that any file you drop into the SCL/ folder is loaded automatically. The user never has to type IMPORT for those — the classes are just there.
+
+  So building a "Standard Class Library" is simple in mechanism: you write .myopl files, you save them into src/main/java/SCL/, and they are available to
+  everyone using MyOpl.
+
+  The hard part is deciding what classes to write and in what order. That's the rest of this document.
+
+  ---
+  2. The big picture
+
+  A standard library is a collection of pre-made toolboxes so users of your language don't have to reinvent basic things every time. Instead of every MyOpl
+  programmer writing their own "find the area of a circle" function, they just write Geometry.circleArea(5).
+
+  The work splits into four phases. Each phase makes the next phase possible.
+
+  - Phase 1 — write classes using only what MyOpl can do today
+  - Phase 2 — make small upgrades to MyOpl itself, which unlocks bigger classes
+  - Phase 3 — connect MyOpl to the outside world (web, files, time)
+  - Phase 4 — polish, document, and test
+
+  ---
+  3. Phase 1 — Classes you can write today
+
+  No changes to Java needed. All of these are pure MyOpl files saved into SCL/.
+
+  Step 1: Delete the placeholder
+
+  There's a leftover test file at src/main/java/SCL/StringUtil.myopl. It only exists to prove the auto-loader worked. Delete it. Nothing else uses it.
+
+  Step 2: Write Math.myopl first
+
+  Why this one first: MyOpl doesn't have built-in functions for square root, power, or remainder (modulo). Several later classes need those. If you build Math
+   first, every other class can call Math.sqrt(x), Math.pow(a, b), Math.mod(a, b) and not worry. If you skip it, you'll hit dead ends in Geometry, Physics,
+  Finance, and Calendar.
+
+  What Math.myopl should contain:
+  - Constants — fixed values like PI (about 3.14159), E (about 2.71828), TAU (which is 2 × PI), the golden ratio, the square root of 2
+  - Simple helpers — abs (always positive), sign (positive, negative, or zero), min, max, clamp (force a value to stay between two limits), square, cube,
+  half, average
+  - Loop-based math — sqrt (square root using a 20-iteration loop), pow (multiply a number by itself N times), factorial (1 × 2 × 3 × … × N), mod (the
+  remainder after division, done by repeated subtraction)
+  - Useful extras — lerp (smoothly blend between two numbers — handy for animations), approxEqual (because computer math isn't perfect, this checks if two
+  numbers are "close enough")
+
+  Step 3: Write the classes that don't depend on Math
+
+  These five can be done in any order. None of them need each other.
+
+  - Bool.myopl — MyOpl doesn't have a true/false type, it uses 1 for true and 0 for false. This class makes that more readable: Bool.TRUE, Bool.FALSE,
+  Bool.and, Bool.or, Bool.not, Bool.xor, Bool.implies.
+  - Convert.myopl — unit conversions. Temperature (Celsius, Fahrenheit, Kelvin), length (miles to km, feet to meters, inches to cm), mass (kg to pounds), time
+   (seconds to minutes to hours), angles (degrees to radians), data sizes (bytes to KB to MB to GB).
+  - Logging.myopl — friendlier printing. Logging.info("started") prints [INFO] started. Also warn, error, debug, divider (a row of dashes), banner (a header
+  with dashes around it). It's just nicer wrappers around the built-in PRINT.
+  - Compare.myopl — readable comparisons. Compare.between(7, 1, 10) checks if 7 is between 1 and 10. Also max3 (the largest of three numbers), min3, clamp,
+  approxEqual.
+  - Constants.myopl — a single file holding common values everyone uses: PI, E, the version number of your standard library, etc. Optional — you can also pull
+   these from Math. Some people like having one obvious place to look.
+
+  Step 4: Write the classes that need Math
+
+  Now that Math.sqrt, Math.pow, and Math.mod exist, you can build the ones that need them.
+
+  - Geometry.myopl — shapes. Area and circumference of a circle, volume and surface area of a sphere, area of a rectangle and triangle, the distance between
+  two points (uses Math.sqrt), the Pythagorean theorem.
+  - Physics.myopl — basic physics formulas. Force (mass times acceleration), kinetic energy, potential energy, momentum, work, power, pressure, density. Plus
+  constants like Earth's gravity (9.81) and the speed of light.
+  - Finance.myopl — money math. Simple and compound interest (compound needs Math.pow), percent of a number, percent change, applying a discount, calculating
+  tax, calculating a tip.
+  - Calendar.myopl — time-unit helpers. Seconds in a minute, hours in a day, days in each month, leap-year check (needs Math.mod). Just constants and math —
+  MyOpl can't read the actual clock yet; that comes in Phase 2.
+
+  Step 5: Write the testing and file helpers
+
+  - Assert.myopl — used to check that your other classes work correctly. For example: Assert.assertEqual(Math.sqrt(16), 4, "square root of 16") prints PASS or
+   FAIL. You'll use this to build a test file that verifies your whole library.
+  - FileIO.myopl — friendlier names for the file functions MyOpl already has. FileIO.read(path), FileIO.write(path, text), FileIO.append(path, text),
+  FileIO.clear(path) (write empty), FileIO.copy(from, to).
+
+  Step 6: Test the whole library
+
+  Open Shell and try these one at a time. If they all give the expected results, your library is solid.
+
+  PRINT(Math.sqrt(25))                      # 5
+  PRINT(Math.pow(2, 10))                    # 1024
+  PRINT(Geometry.circleArea(2))             # ~12.566
+  PRINT(Convert.celsiusToFahrenheit(100))   # 212
+  PRINT(Finance.tip(100, 20))               # 20
+  Logging.info("library works")             # [INFO] library works
+
+  That's Phase 1 complete. At this point you have a real, working standard library.
+
+  ---
+  4. Phase 2 — Upgrade MyOpl itself
+
+  Some useful classes literally can't be written today because the language is missing pieces. Each upgrade is small, and each one unlocks new classes.
+
+  Upgrade A: Make == work on text
+
+  The problem: today, comparing two pieces of text with == crashes. The interpreter assumes everything being compared is a number.
+
+  The fix: open src/main/java/lang/Interpreter.java, find the method called visitBinOp, and add a check before the number conversion: "if both sides are
+  strings, compare them as strings instead." About five lines of Java.
+
+  What this unlocks: any program that asks the user a yes/no question, any string comparison, and proper Assert.assertEqual for text.
+
+  Upgrade B: Add escape sequences in text
+
+  The problem: if you write "hello\nworld" in MyOpl today, the \n is treated as two literal characters (a backslash and an n), not a newline. So you can't
+  make multi-line text.
+
+  The fix: in src/main/java/lang/Lexer.java, find makeString, and when it sees a backslash, look at the next character. Translate \n to a real newline, \t to
+  a tab, \" to a quote, \\ to a single backslash.
+
+  What this unlocks: multi-line strings, nicer banners in Logging, cleaner output everywhere.
+
+  Upgrade C: Add text-handling built-in functions
+
+  Add these to Interpreter.java (each one is just a few lines that calls the matching Java method):
+  - STR_LEN(text) — how long the text is
+  - SUBSTR(text, start, length) — pull out a piece
+  - UPPER(text) — uppercase
+  - LOWER(text) — lowercase
+  - INDEX_OF(text, target) — find where one piece appears in another
+  - REPLACE(text, find, swap) — find-and-replace
+
+  What this unlocks: a real String.myopl class with substring, contains, startsWith, endsWith, trim, repeat, split, join, capitalize, padding for tables, and
+  more.
+
+  Upgrade D: Let people get items out of a list
+
+  The problem: today you can build a list ([1, 2, 3]) and ask how long it is (LEN), but you can't get individual items back out.
+
+  The fix (easy version): add four built-in functions to Interpreter.java:
+  - GET(list, i) — item at position i
+  - SET(list, i, value) — change item at position i
+  - PUSH(list, value) — add to the end
+  - POP(list) — remove and return the last item
+
+  What this unlocks: a proper List.myopl class with first, last, contains, indexOf, reverse, sort, map, filter, reduce, sum, average. Once you can reach into
+  a list, the rest can be written in pure MyOpl.
+
+  Upgrade E: Connect to the real world
+
+  Three more built-in functions, each just a few lines of Java:
+  - RANDOM() — returns a number between 0 and 1
+  - NOW() — returns the current time (seconds since 1970)
+  - SLEEP(ms) — pauses the program
+
+  What this unlocks: Random.myopl (coin flip, dice roll, random integer, shuffle, pick), Time.myopl (stopwatches, elapsed time, format a duration), and the
+  foundation for games and simulations.
+
+  ---
+  5. Phase 3 — Reach the outside world
+
+  Once Phase 2 is done, you can add classes that connect to things beyond MyOpl. Each needs one or two new built-ins in Java.
+
+  - HTTP.myopl — fetch web pages. Needs an HTTP_GET(url) built-in.
+  - JSON.myopl — read and write JSON (the format most web APIs use). Needs JSON_PARSE and JSON_STRINGIFY built-ins.
+  - Env.myopl — environment variables, command-line arguments, exit codes. Needs ENV(name), ARGS(), EXIT(code).
+  - Path.myopl — file path helpers. Needs JOIN_PATH, BASENAME, DIRNAME, FILE_EXISTS.
+  - Char.myopl — single-character utilities (is this a digit? is this a letter?). Needs CHAR_CODE and FROM_CODE.
+
+  ---
+  6. Phase 4 — Polish
+
+  After the library exists and works, the last things to do:
+
+  - Add a short comment at the top of each .myopl file explaining what it's for.
+  - Write SCL/tests.myopl that uses Assert to verify every public function. Run it after every change so you catch breakage early.
+  - Update src/main/java/Grammar.txt to list the SCL classes so users know what's available.
+  - Add a README.md inside SCL/ listing each class and a one-line summary.
+
+  ---
+  7. What every SCL file looks like
+
+  So you have a mental template, here is the shape of every class file. Save it as SomeName.myopl in the SCL folder.
+
+  # What this class is for.
+
+  CLASS SomeName BEGIN
+
+      # Values that never change
+      VAR PI = 3.14159
+
+      # One-line functions
+      FUN double(n) -> n * 2
+
+      # Multi-step functions (use BEGIN ... END for the body)
+      FUN halveUntilOne(x) -> BEGIN
+          VAR result = x
+          WHILE result > 1 THEN VAR result = result / 2
+          RETURN result
+      END
+
+  END
+
+  Every class follows that pattern. Once you know the shape, writing each one is just deciding what helpers belong inside.
+
+  ---
+  8. Your first day in concrete steps
+
+  If you do nothing else today, do this:
+
+  1. Delete src/main/java/SCL/StringUtil.myopl.
+  2. Create src/main/java/SCL/Math.myopl with the contents described in Step 2.
+  3. Compile (javac Shell.java lang/*.java).
+  4. Run java Shell, press Enter for the REPL, and type PRINT(Math.sqrt(144)).
+  5. If you see 12, the whole SCL system is working end-to-end and you can confidently fill in the rest of Phase 1.
+
+  That is the entire roadmap.
