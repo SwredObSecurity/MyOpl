@@ -9,6 +9,12 @@ public class Interpreter {
 
     private record BoundMethod(FunDefNode fun, Map<String, Object> classScope) {}
 
+    /** Unwinds the stack from a RETURN statement up to the enclosing function call. */
+    private static final class ReturnSignal extends RuntimeException {
+        final Object value;
+        ReturnSignal(Object value) { super(null, null, false, false); this.value = value; }
+    }
+
     private static final Set<String> BUILTINS = Set.of(
         "PRINT", "LEN", "INPUT", "INPUT_NUM", "READ_FILE", "WRITE_FILE", "APPEND_FILE"
     );
@@ -51,7 +57,7 @@ public class Interpreter {
                 yield null;
             }
             case CallNode c   -> executeCall(c);
-            case ReturnNode r -> visit(r.nodeToReturn());
+            case ReturnNode r -> { throw new ReturnSignal(r.nodeToReturn() != null ? visit(r.nodeToReturn()) : null); }
             case IfNode i -> {
                 if (isTrue(visit(i.condition()))) yield visit(i.thenCase());
                 yield i.elseCase() != null ? visit(i.elseCase()) : null;
@@ -167,7 +173,7 @@ public class Interpreter {
             symbols.putAll(bm.classScope());
             for (int i = 0; i < def.argNameTokens().size(); i++)
                 symbols.put((String) def.argNameTokens().get(i).value(), visit(call.argNodes().get(i)));
-            Object res = visit(def.bodyNode());
+            Object res = callBody(def);
             symbols = snap;
             return res;
         }
@@ -176,9 +182,15 @@ public class Interpreter {
         Map<String, Object> snap = new HashMap<>(symbols);
         for (int i = 0; i < def.argNameTokens().size(); i++)
             symbols.put((String) def.argNameTokens().get(i).value(), visit(call.argNodes().get(i)));
-        Object res = visit(def.bodyNode());
+        Object res = callBody(def);
         symbols = snap;
         return res;
+    }
+
+    /** Runs a function body, turning a RETURN anywhere inside it into the call's result. */
+    private Object callBody(FunDefNode def) {
+        try { return visit(def.bodyNode()); }
+        catch (ReturnSignal rs) { return rs.value; }
     }
 
     private boolean isTrue(Object val) {

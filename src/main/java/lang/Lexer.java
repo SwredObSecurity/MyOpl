@@ -81,7 +81,21 @@ public class Lexer {
 
     private Token makeString() {
         StringBuilder sb = new StringBuilder(); Position start = pos.copy(); advance();
-        while (currentChar != null && currentChar != '"') { sb.append(currentChar); advance(); }
+        while (currentChar != null && currentChar != '"') {
+            if (currentChar == '\\') {
+                advance();
+                if (currentChar == null) break;
+                switch (currentChar) {
+                    case 'n'  -> sb.append('\n');
+                    case 't'  -> sb.append('\t');
+                    case 'r'  -> sb.append('\r');
+                    case '"'  -> sb.append('"');
+                    case '\\' -> sb.append('\\');
+                    default   -> { sb.append('\\'); sb.append(currentChar); }
+                }
+                advance();
+            } else { sb.append(currentChar); advance(); }
+        }
         advance(); return new Token("STRING", sb.toString(), start, pos.copy());
     }
 

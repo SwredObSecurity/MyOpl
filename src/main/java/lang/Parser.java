@@ -29,7 +29,7 @@ public class Parser {
             if (val.equals("IF"))     return ifExpr();
             if (val.equals("FOR"))    return forExpr();
             if (val.equals("WHILE"))  return whileExpr();
-            if (val.equals("RETURN")) { Position s = current.posStart(); advance(); Node v = expr(); return new ReturnNode(v, s, v.posEnd()); }
+            if (val.equals("RETURN")) { Position s = current.posStart(); advance(); Node v = expr(); return new ReturnNode(v, s, v != null ? v.posEnd() : s); }
             if (val.equals("CLASS"))  return classDefExpr();
             if (val.equals("IMPORT")) return importExpr();
         }
@@ -159,6 +159,10 @@ public class Parser {
         return new ListNode(elements, s, e);
     }
 
+    /**
+     * Single-line body:  FUN f(args) -> expr            (body is the returned expression)
+     * Multi-line  body:  FUN f(args)  stmt  stmt  END   (body is a block; use RETURN to yield)
+     */
     private Node funDef() {
         advance();
         Token name = null;
@@ -170,8 +174,18 @@ public class Parser {
             while (current != null && current.type().equals("COMMA")) { advance(); args.add(current); advance(); }
         }
         if (current != null && current.type().equals("RPAREN")) advance();
-        if (current != null && current.type().equals("ARROW"))  advance();
-        return new FunDefNode(name, args, expr());
+
+        if (current != null && current.type().equals("ARROW")) { advance(); return new FunDefNode(name, args, expr()); }
+
+        Position start = current != null ? current.posStart() : (name != null ? name.posStart() : null);
+        List<Node> stmts = new ArrayList<>();
+        while (current != null && !current.value().equals("END")) {
+            Node s = expr();
+            if (s != null) stmts.add(s);
+        }
+        Position end = current != null ? current.posEnd() : start;
+        if (current != null) advance();      // consume END
+        return new FunDefNode(name, args, new BlockNode(stmts, start, end));
     }
 
     private Node binOp(java.util.function.Supplier<Node> func, List<String> ops) {

@@ -9,6 +9,15 @@ COMMENTS:
   # ...           Single-line comment. Everything from # to end of line is ignored.
   #* ... *#       Multi-line comment. Everything between #* and *# is ignored, may span lines.
 
+STRINGS:
+  "..."           A string literal. Supports these backslash escape sequences:
+    \n            newline
+    \t            tab
+    \r            carriage return
+    \"            literal double-quote
+    \\            literal backslash
+                  Any other \x is kept verbatim as the two characters \ and x.
+
 BUILT-IN FUNCTIONS:
   Console:
     PRINT(val1, val2...)     - Writes values to console, separated by spaces, with newline.
@@ -47,7 +56,7 @@ OPERATORS:
 GRAMMAR:
   Expression -> VAR ID = Expr | IF Expr THEN Expr (ELSE Expr)?
                 | FOR ID = Expr TO Expr (STEP Expr)? THEN Expr
-                | WHILE Expr THEN Expr | RETURN Expr
+                | WHILE Expr THEN Expr | RETURN Expr?
                 | CLASS ID BEGIN Expr* END
                 | IMPORT STRING
                 | Comparison
@@ -56,6 +65,52 @@ GRAMMAR:
   Term       -> Factor ((MUL | DIV) Factor)*
   Factor     -> Atom ( (args) | .ID )*
   Atom       -> INT | FLOAT | STRING | ID | [list] | (Expr) | FunDef | BEGIN...END
+  FunDef     -> FUN ID? ( ID (, ID)* )? )
+                  ( -> Expr            # single-line: body is the returned expression
+                  | Expr* END )        # multi-line:  body is a block, use RETURN to yield
+
+=========================================
+      FUNCTIONS
+=========================================
+
+Functions are defined with FUN and can be written in two forms.
+
+SINGLE-LINE (arrow):
+  FUN name(args) -> expression
+  - The expression after -> is evaluated and returned automatically.
+  - The body may span lines visually, but it is a single expression.
+
+  EXAMPLES:
+    FUN square(n) -> n * n
+    FUN status(v) -> IF v > 20 THEN "High" ELSE "Low"
+
+MULTI-LINE (block, terminated by END):
+  FUN name(args)
+      statement
+      statement
+      ...
+  END
+  - No arrow. The body is a block of statements that runs top to bottom.
+  - Use RETURN to yield a value and stop the function immediately, even from
+    inside an IF / FOR / WHILE. RETURN works only inside a function.
+  - With no RETURN, the function yields the value of its last statement.
+  - RETURN may be bare (returns nothing) or followed by an expression.
+
+  EXAMPLES:
+    FUN classify(n)
+        IF n > 0 THEN RETURN "positive"
+        IF n < 0 THEN RETURN "negative"
+        RETURN "zero"
+    END
+
+    FUN firstOver(limit)
+        FOR i = 1 TO 100 THEN
+            IF i > limit THEN RETURN i
+        RETURN 0 - 1
+    END
+
+  NOTE: FUN name(args) -> BEGIN ... END is also valid and behaves like the
+  multi-line block form.
 
 =========================================
       CLASSES AND MODULES
