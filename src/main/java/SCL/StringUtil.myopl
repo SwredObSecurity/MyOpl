@@ -1,4 +1,0 @@
-CLASS StringUtil BEGIN
-    FUN greet(name) -> "Hello, " + name + "!"
-    VAR version = 1.0
-END
