@@ -6,7 +6,7 @@ public class Lexer {
     private Position pos;
     private Character currentChar;
     private static final List<String> KEYWORDS = List.of(
-        "VAR", "FUN", "RETURN", "IF", "THEN", "ELSE",
+        "VAR", "CONST", "FUN", "RETURN", "IF", "THEN", "ELSE",
         "FOR", "TO", "STEP", "WHILE", "BEGIN", "END",
         "CLASS", "IMPORT"
     );

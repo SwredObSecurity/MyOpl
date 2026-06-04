@@ -35,7 +35,7 @@ record VarAccessNode(Token varNameToken) implements Node {
     public Position posEnd()   { return varNameToken.posEnd();   }
 }
 
-record VarAssignNode(Token varNameToken, Node valueNode) implements Node {
+record VarAssignNode(Token varNameToken, Node valueNode, boolean isConst) implements Node {
     public Position posStart() { return varNameToken.posStart(); }
     public Position posEnd()   { return valueNode.posEnd();      }
 }

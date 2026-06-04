@@ -25,7 +25,8 @@ public class Parser {
     private Node expr() {
         if (current != null && current.type().equals("KEYWORD")) {
             String val = (String) current.value();
-            if (val.equals("VAR"))    { advance(); Token n = current; advance(); advance(); return new VarAssignNode(n, expr()); }
+            if (val.equals("VAR"))    { advance(); Token n = current; advance(); advance(); return new VarAssignNode(n, expr(), false); }
+            if (val.equals("CONST"))  { advance(); Token n = current; advance(); advance(); return new VarAssignNode(n, expr(), true); }
             if (val.equals("IF"))     return ifExpr();
             if (val.equals("FOR"))    return forExpr();
             if (val.equals("WHILE"))  return whileExpr();
@@ -96,7 +97,16 @@ public class Parser {
     // ── Operators ─────────────────────────────────────────────────────────
 
     private Node compExpr() { return binOp(this::term, List.of("EE", "NE", "LT", "LTE", "GT", "GTE")); }
-    private Node term()     { return binOp(this::factor, List.of("MUL", "DIV")); }
+    private Node term()     { return binOp(this::unary, List.of("MUL", "DIV")); }
+
+    /** Unary minus / plus:  -5,  -n,  -Math.abs(x),  +3  (binds tighter than * and /). */
+    private Node unary() {
+        if (current != null && (current.type().equals("MINUS") || current.type().equals("PLUS"))) {
+            Token op = current; advance();
+            return new UnaryOpNode(op, unary());
+        }
+        return factor();
+    }
 
     /**
      * Handles function calls  foo(args)
@@ -160,8 +170,8 @@ public class Parser {
     }
 
     /**
-     * Single-line body:  FUN f(args) -> expr            (body is the returned expression)
-     * Multi-line  body:  FUN f(args)  stmt  stmt  END   (body is a block; use RETURN to yield)
+     * Single-line body:  FUN f(args) -> expr                  (body is the returned expression)
+     * Multi-line  body:  FUN f(args) BEGIN stmt stmt END      (body is a block; use RETURN to yield)
      */
     private Node funDef() {
         advance();
@@ -175,17 +185,13 @@ public class Parser {
         }
         if (current != null && current.type().equals("RPAREN")) advance();
 
+        // Single-line body:  FUN f(args) -> expr
         if (current != null && current.type().equals("ARROW")) { advance(); return new FunDefNode(name, args, expr()); }
 
-        Position start = current != null ? current.posStart() : (name != null ? name.posStart() : null);
-        List<Node> stmts = new ArrayList<>();
-        while (current != null && !current.value().equals("END")) {
-            Node s = expr();
-            if (s != null) stmts.add(s);
-        }
-        Position end = current != null ? current.posEnd() : start;
-        if (current != null) advance();      // consume END
-        return new FunDefNode(name, args, new BlockNode(stmts, start, end));
+        // Multi-line body:  FUN f(args) BEGIN stmt stmt ... END   (atom() parses the BEGIN ... END block)
+        if (current == null || !current.type().equals("KEYWORD") || !"BEGIN".equals(current.value()))
+            throw new RuntimeException("Expected '->' for a single-line body, or 'BEGIN ... END' for a multi-line function body");
+        return new FunDefNode(name, args, expr());
     }
 
     private Node binOp(java.util.function.Supplier<Node> func, List<String> ops) {

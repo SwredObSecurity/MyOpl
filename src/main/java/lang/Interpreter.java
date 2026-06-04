@@ -4,6 +4,7 @@ import java.nio.file.*;
 
 public class Interpreter {
     private Map<String, Object> symbols = new HashMap<>();
+    private Set<String> constants = new HashSet<>();
     private final Scanner stdin = new Scanner(System.in);
     private String baseDir = ".";
 
@@ -44,8 +45,12 @@ public class Interpreter {
                 yield res;
             }
             case VarAssignNode v -> {
+                String name = (String) v.varNameToken().value();
+                if (constants.contains(name))
+                    throw new RuntimeException("Cannot reassign constant '" + name + "'");
                 Object val = visit(v.valueNode());
-                symbols.put((String) v.varNameToken().value(), val);
+                symbols.put(name, val);
+                if (v.isConst()) constants.add(name);
                 yield val;
             }
             case VarAccessNode v -> symbols.getOrDefault(v.varNameToken().value(), 0.0);
@@ -83,10 +88,13 @@ public class Interpreter {
 
             case ClassDefNode cd -> {
                 Map<String, Object> saved = symbols;
+                Set<String> savedConsts = constants;
                 symbols = new HashMap<>();
+                constants = new HashSet<>();
                 visit(cd.body());
                 Map<String, Object> classScope = new HashMap<>(symbols);
                 symbols = saved;
+                constants = savedConsts;
                 symbols.put((String) cd.nameToken().value(), classScope);
                 yield null;
             }
@@ -170,20 +178,24 @@ public class Interpreter {
         if (callable instanceof BoundMethod bm) {
             FunDefNode def = bm.fun();
             Map<String, Object> snap = new HashMap<>(symbols);
+            Set<String> constSnap = new HashSet<>(constants);
             symbols.putAll(bm.classScope());
             for (int i = 0; i < def.argNameTokens().size(); i++)
                 symbols.put((String) def.argNameTokens().get(i).value(), visit(call.argNodes().get(i)));
             Object res = callBody(def);
             symbols = snap;
+            constants = constSnap;
             return res;
         }
 
         FunDefNode def = (FunDefNode) callable;
         Map<String, Object> snap = new HashMap<>(symbols);
+        Set<String> constSnap = new HashSet<>(constants);
         for (int i = 0; i < def.argNameTokens().size(); i++)
             symbols.put((String) def.argNameTokens().get(i).value(), visit(call.argNodes().get(i)));
         Object res = callBody(def);
         symbols = snap;
+        constants = constSnap;
         return res;
     }
 
