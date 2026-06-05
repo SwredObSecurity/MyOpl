@@ -1,0 +1,151 @@
+#*
+   List — a growable, ordered collection modelled on java.util.ArrayList.
+
+       IMPORT "SCL/Extras/List.myopl"
+       VAR xs = NEW List()
+       xs.add(10)  xs.add(20)  xs.add(30)
+       PRINT(xs.get(1))        # 20.0
+       PRINT(xs.size())        # 3.0
+       PRINT(xs.toString())    # [10.0, 20.0, 30.0]
+
+   MyOPL has no array indexing or list-mutation built-ins, so List is implemented
+   as a singly linked list of ListNode objects. A tail pointer keeps add() O(1);
+   get/set/removeAt walk from the head, so they are O(n) (fine for a teaching lib).
+
+   Indices are 0-based. indexOf / contains compare with ==, so they work for
+   numbers, strings and chars (the element types == understands).
+*#
+
+# One cell of the linked list: a value plus a link to the next cell.
+CLASS ListNode BEGIN
+   VAR value = 0
+   VAR next  = 0          # 0 means "no next" — List tracks count, so we never test this
+
+   INIT(v) BEGIN
+      VAR value = v
+   END
+
+   FUN setNext(n) BEGIN
+      VAR next = n
+   END
+
+   FUN setValue(v) BEGIN
+      VAR value = v
+   END
+END
+
+CLASS List BEGIN
+   VAR head  = 0
+   VAR tail  = 0
+   VAR count = 0
+
+   INIT() BEGIN
+      VAR count = 0
+   END
+
+   # number of elements
+   FUN size() -> count
+
+   # 1 if empty, else 0
+   FUN isEmpty() -> IF count == 0 THEN 1 ELSE 0
+
+   # append x to the end; returns the new size
+   FUN add(x) BEGIN
+      VAR node = NEW ListNode(x)
+      IF count == 0 THEN BEGIN
+         VAR head = node
+         VAR tail = node
+      END ELSE BEGIN
+         tail.setNext(node)
+         VAR tail = node
+      END
+      VAR count = count + 1
+      RETURN count
+   END
+
+   # internal: the node at index i  (assumes 0 <= i < count)
+   FUN nodeAt(i) BEGIN
+      VAR cur = head
+      VAR j = 0
+      WHILE j < i THEN BEGIN
+         VAR cur = cur.next
+         VAR j = j + 1
+      END
+      RETURN cur
+   END
+
+   # element at index i
+   FUN get(i) BEGIN
+      VAR cur = nodeAt(i)
+      RETURN cur.value
+   END
+
+   # replace element at index i with x; returns x
+   FUN set(i, x) BEGIN
+      VAR cur = nodeAt(i)
+      cur.setValue(x)
+      RETURN x
+   END
+
+   # first index of x, or -1 if absent
+   FUN indexOf(x) BEGIN
+      VAR cur = head
+      VAR j = 0
+      WHILE j < count THEN BEGIN
+         IF cur.value == x THEN
+            RETURN j
+         VAR cur = cur.next
+         VAR j = j + 1
+      END
+      RETURN -1
+   END
+
+   # 1 if x is present, else 0
+   FUN contains(x) BEGIN
+      IF indexOf(x) < 0 THEN
+         RETURN 0
+      ELSE
+         RETURN 1
+   END
+
+   # remove the element at index i; returns 1
+   FUN removeAt(i) BEGIN
+      IF i == 0 THEN BEGIN
+         VAR head = head.next
+         VAR count = count - 1
+         IF count == 0 THEN
+            VAR tail = 0
+         RETURN 1
+      END
+      VAR prev   = nodeAt(i - 1)
+      VAR target = prev.next
+      prev.setNext(target.next)
+      IF i == count - 1 THEN
+         VAR tail = prev
+      VAR count = count - 1
+      RETURN 1
+   END
+
+   # empty the list
+   FUN clear() BEGIN
+      VAR head  = 0
+      VAR tail  = 0
+      VAR count = 0
+      RETURN 0
+   END
+
+   # "[a, b, c]" style text
+   FUN toString() BEGIN
+      VAR s   = "["
+      VAR cur = head
+      VAR j   = 0
+      WHILE j < count THEN BEGIN
+         IF j > 0 THEN
+            VAR s = s + ", "
+         VAR s = s + cur.value
+         VAR cur = cur.next
+         VAR j = j + 1
+      END
+      RETURN s + "]"
+   END
+END

@@ -1,0 +1,41 @@
+#*
+   Console — terminal input/output, modelled on  new Scanner(System.in)  plus
+   System.out. Wraps MyOPL's PRINT / INPUT / INPUT_NUM built-ins.
+
+       IMPORT "SCL/Extras/Console.myopl"
+       VAR io = NEW Console()
+       io.println("What is your name?")
+       VAR name = io.readLine("> ")
+       VAR age  = io.nextInt("Age: ")
+       io.println("Hi " + name)
+
+   NOTE: MyOPL's PRINT always adds a trailing newline, so print() and println()
+   behave the same — there is no built-in for printing without a newline.
+*#
+CLASS Console BEGIN
+
+   # --- output (System.out) ---
+
+   # write a value followed by a newline
+   FUN println(x) -> PRINT(x)
+
+   # same as println (no newline-less print exists in MyOPL)
+   FUN print(x) -> PRINT(x)
+
+   # print a blank line
+   FUN newLine() -> PRINT("")
+
+   # --- input (Scanner) ---
+
+   # show prompt, read one line, return it as a string
+   FUN readLine(prompt) -> INPUT(prompt)
+
+   # read one line with no prompt
+   FUN nextLine() -> INPUT("")
+
+   # show prompt, read one line parsed as a number (bad input -> 0)
+   FUN nextInt(prompt) -> INPUT_NUM(prompt)
+
+   # show prompt, read one line parsed as a number (bad input -> 0)
+   FUN nextDouble(prompt) -> INPUT_NUM(prompt)
+END

@@ -1,0 +1,41 @@
+#*
+   File — an object wrapper around a file path, modelled on java.io.File but built
+   on MyOPL's existing file built-ins (READ_FILE, WRITE_FILE, APPEND_FILE).
+
+       IMPORT "SCL/Extras/File.myopl"
+       VAR f = NEW File("notes.txt")
+       f.write("first line\n")
+       f.appendLine("second line")
+       PRINT(f.read())
+
+   NOTE: MyOPL has no built-in for existence/deletion/size, so this wrapper offers
+   only the operations the language actually supports: read, (over)write and append.
+*#
+CLASS File BEGIN
+   VAR path = ""
+
+   INIT(p) BEGIN
+      VAR path = p
+   END
+
+   # the path this File points at
+   FUN getPath() -> path
+
+   # full contents as a string (errors if the file does not exist)
+   FUN read() -> READ_FILE(path)
+
+   # overwrite the file with text (creates it if missing); returns 1
+   FUN write(text) -> WRITE_FILE(path, text)
+
+   # overwrite with text + newline; returns 1
+   FUN writeLine(text) -> WRITE_FILE(path, text + "\n")
+
+   # append text to the end (creates if missing); returns 1
+   FUN append(text) -> APPEND_FILE(path, text)
+
+   # append text + newline; returns 1
+   FUN appendLine(text) -> APPEND_FILE(path, text + "\n")
+
+   # empty the file; returns 1
+   FUN clear() -> WRITE_FILE(path, "")
+END

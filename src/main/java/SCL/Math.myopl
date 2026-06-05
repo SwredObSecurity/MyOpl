@@ -94,4 +94,8 @@ CLASS Math BEGIN
    FUN inverseLerp(a,b,v) BEGIN
       RETURN ((v - a) / (b - a))
    END
+
+   FUN remap(v,inLo,inHi,outLo,outHi) BEGIN
+      RETURN (outLo + (outHi - outLo) * ((v - inLo) / (inHi - inLo)))
+   END
 END
