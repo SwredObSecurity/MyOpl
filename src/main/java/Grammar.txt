@@ -201,9 +201,11 @@ CONSTRUCTORS (INIT) AND OBJECTS (NEW):
     PRINT(p.describe())                  # Point(3.0, 4.0)
     PRINT(NEW Point(1, 2).describe())    # Point(1.0, 2.0)   (chained)
 
-  NOTE: instance methods can READ their object's fields, but field writes inside a
-  method are local to that call and do not persist — only INIT sets up an object's
-  state. (Same scoping rule as static class methods.)
+  STATEFUL METHODS: a method may reassign its object's own fields (with VAR), and
+  the change PERSISTS on that object for later calls — so objects can carry state
+  that evolves over time. See SCL/Extras/Random.myopl, whose draw methods advance an
+  internal seed. (Only the object's declared fields persist; brand-new names and
+  parameters created inside a method stay local to that call.)
 
 IMPORT:
   IMPORT "path/to/File.myopl"

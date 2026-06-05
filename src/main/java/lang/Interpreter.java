@@ -227,6 +227,10 @@ public class Interpreter {
             for (int i = 0; i < def.argNameTokens().size(); i++)
                 symbols.put((String) def.argNameTokens().get(i).value(), visit(call.argNodes().get(i)));
             Object res = callBody(def);
+            // Persist writes to the object's OWN fields back into it, so methods
+            // can mutate instance/class state across calls (e.g. a Random's seed).
+            for (String k : bm.classScope().keySet())
+                if (symbols.containsKey(k)) bm.classScope().put(k, symbols.get(k));
             symbols = snap;
             constants = constSnap;
             return res;

@@ -86,4 +86,12 @@ CLASS Math BEGIN
       ELSE
          RETURN 0
    END
+
+   FUN lerp(a,b,t) BEGIN
+      RETURN (a + (b - a) * t)
+   END
+
+   FUN inverseLerp(a,b,v) BEGIN
+      RETURN ((v - a) / (b - a))
+   END
 END

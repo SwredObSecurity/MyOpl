@@ -1,0 +1,85 @@
+#*
+   Random — a small pseudo-random number generator modelled on java.util.Random.
+
+   Make one with a seed:   VAR r = NEW Random(12345)
+   then draw numbers:      r.nextInt(6)   r.nextDouble()   r.nextBoolean()
+
+   HOW IT WORKS
+     Uses a linear-congruential generator:  seed = (75 * seed + 74) mod 65537
+     (period 65536). Each draw advances the seed, so successive calls differ.
+
+   NOTE: MyOPL has no system clock, so Random is DETERMINISTIC — the same seed
+   always produces the same sequence. Pass different seeds for different streams.
+*#
+CLASS Random BEGIN
+
+   VAR seed = 1
+   VAR a    = 75
+   VAR c    = 74
+   VAR m    = 65537
+
+   INIT(s) BEGIN
+      VAR seed = s
+   END
+
+   # --- pure helpers (they read fields but never change the seed) ---
+
+   # x mod m, for x >= 0. x is small here (< a*m), so repeated subtraction is fine.
+   FUN modulo(x) BEGIN
+      VAR r = x
+      WHILE r >= m THEN BEGIN
+         VAR r = r - m
+      END
+      RETURN r
+   END
+
+   # floor of a non-negative number (largest whole number <= x)
+   FUN floor(x) BEGIN
+      VAR i = 0
+      WHILE i + 1 <= x THEN BEGIN
+         VAR i = i + 1
+      END
+      RETURN i
+   END
+
+   # the next seed value after s (does NOT store it — pure)
+   FUN stepFrom(s) BEGIN
+      RETURN modulo(a * s + c)
+   END
+
+   # --- draws (each advances the stored seed once, then returns a number) ---
+
+   # a double in [0.0, 1.0)
+   FUN nextDouble() BEGIN
+      VAR seed = stepFrom(seed)
+      RETURN seed / m
+   END
+
+   # a whole number in [0, bound)
+   FUN nextInt(bound) BEGIN
+      VAR seed = stepFrom(seed)
+      RETURN floor((seed / m) * bound)
+   END
+
+   # a whole number in [lo, hi)
+   FUN range(lo, hi) BEGIN
+      VAR seed = stepFrom(seed)
+      RETURN lo + floor((seed / m) * (hi - lo))
+   END
+
+   # 1 (true) or 0 (false), each about half the time
+   FUN nextBoolean() BEGIN
+      VAR seed = stepFrom(seed)
+      IF (seed / m) < 0.5 THEN
+         RETURN 0
+      ELSE
+         RETURN 1
+   END
+
+   # roll an n-sided die: a whole number in [1, sides]
+   FUN dice(sides) BEGIN
+      VAR seed = stepFrom(seed)
+      RETURN 1 + floor((seed / m) * sides)
+   END
+
+END

@@ -34,7 +34,9 @@ public class Parser {
             if (val.equals("CLASS"))  return classDefExpr();
             if (val.equals("IMPORT")) return importExpr();
         }
-        return binOp(this::compExpr, List.of("PLUS", "MINUS"));
+        // Comparisons are the lowest precedence (outermost), so additive operators
+        // bind tighter:  i + 1 <= x  parses as  (i + 1) <= x.
+        return binOp(this::arith, List.of("EE", "NE", "LT", "GT", "LTE", "GTE"));
     }
 
     // ── Control-flow helpers ──────────────────────────────────────────────
@@ -96,7 +98,7 @@ public class Parser {
 
     // ── Operators ─────────────────────────────────────────────────────────
 
-    private Node compExpr() { return binOp(this::term, List.of("EE", "NE", "LT", "LTE", "GT", "GTE")); }
+    private Node arith()    { return binOp(this::term, List.of("PLUS", "MINUS")); }
     private Node term()     { return binOp(this::unary, List.of("MUL", "DIV")); }
 
     /** Unary minus / plus:  -5,  -n,  -Math.abs(x),  +3  (binds tighter than * and /). */
