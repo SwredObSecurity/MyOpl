@@ -30,5 +30,60 @@ CLASS Math BEGIN
          RETURN b
    END
 
+   FUN max(a,b) BEGIN
+      IF a > b THEN
+         RETURN a
+      ELSE
+         RETURN b
+   END
 
+   FUN clamp(n,lo,hi) BEGIN
+      IF n < lo THEN
+         RETURN lo
+      ELSE IF n > hi THEN
+         RETURN hi
+      ELSE
+         RETURN n
+   END
+
+   FUN negate(n) BEGIN
+      RETURN 0 - n
+   END
+
+   FUN half(n) BEGIN
+      RETURN n / 2
+   END
+
+   FUN square(n) BEGIN
+      RETURN n * n
+   END
+
+   FUN cube(n) BEGIN
+      RETURN n * n * n
+   END
+
+   FUN average(a,b) BEGIN
+      RETURN (a+b)/2
+   END
+
+   FUN isPos(n) BEGIN
+      IF n > 0 THEN
+         RETURN 1
+      ELSE
+         RETURN 0
+   END
+
+   FUN isNeg(n) BEGIN
+      IF n < 0 THEN
+         RETURN 1
+      ELSE
+         RETURN 0
+   END
+
+   FUN isZero(n) BEGIN
+      IF n == 0 THEN
+         RETURN 1
+      ELSE
+         RETURN 0
+   END
 END
