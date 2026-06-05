@@ -2,10 +2,10 @@ package lang;
 import java.util.List;
 
 public sealed interface Node permits
-        NumberNode, StringNode, BinOpNode, UnaryOpNode, VarAccessNode,
+        NumberNode, StringNode, CharNode, BinOpNode, UnaryOpNode, VarAccessNode,
         VarAssignNode, FunDefNode, CallNode, ReturnNode, IfNode, ForNode,
         WhileNode, BlockNode, ListNode, BuiltInFunctionNode,
-        ClassDefNode, ImportNode, MemberAccessNode {
+        ClassDefNode, ImportNode, MemberAccessNode, NewNode {
     Position posStart();
     Position posEnd();
 }
@@ -16,6 +16,12 @@ record NumberNode(Token token) implements Node {
 }
 
 record StringNode(Token token) implements Node {
+    public Position posStart() { return token.posStart(); }
+    public Position posEnd()   { return token.posEnd();   }
+}
+
+/** A single-character literal written with single quotes:  'x'  '\n'. */
+record CharNode(Token token) implements Node {
     public Position posStart() { return token.posStart(); }
     public Position posEnd()   { return token.posEnd();   }
 }
@@ -100,3 +106,12 @@ record MemberAccessNode(Node objectNode, Token memberToken) implements Node {
     public Position posStart() { return objectNode.posStart();    }
     public Position posEnd()   { return memberToken.posEnd(); }
 }
+
+/**
+ * NEW ClassName(args)
+ * Instantiates a class: copies the class scope into a fresh per-instance map,
+ * runs the class's INIT constructor (if any) with the given args to populate
+ * the instance's fields, then yields the instance. Methods called on the
+ * instance (instance.method()) see that instance's own fields.
+ */
+record NewNode(Token classNameToken, List<Node> argNodes, Position posStart, Position posEnd) implements Node {}

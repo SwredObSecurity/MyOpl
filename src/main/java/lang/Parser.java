@@ -140,6 +140,8 @@ public class Parser {
         if (current == null) return null;
         if (current.type().equals("KEYWORD")) {
             if (current.value().equals("FUN")) return funDef();
+            if (current.value().equals("INIT")) return constructorDef();
+            if (current.value().equals("NEW")) return newExpr();
             if (current.value().equals("BEGIN")) {
                 Position s = current.posStart(); advance();
                 List<Node> stmts = new ArrayList<>();
@@ -150,6 +152,7 @@ public class Parser {
             }
         }
         if (current.type().equals("STRING"))     { Token t = current; advance(); return new StringNode(t); }
+        if (current.type().equals("CHAR"))       { Token t = current; advance(); return new CharNode(t); }
         if (current.type().equals("INT") || current.type().equals("FLOAT")) { Token t = current; advance(); return new NumberNode(t); }
         if (current.type().equals("IDENTIFIER")) { Token t = current; advance(); return new VarAccessNode(t); }
         if (current.type().equals("LPAREN"))     { advance(); Node n = expr(); if (current != null && current.type().equals("RPAREN")) advance(); return n; }
@@ -192,6 +195,47 @@ public class Parser {
         if (current == null || !current.type().equals("KEYWORD") || !"BEGIN".equals(current.value()))
             throw new RuntimeException("Expected '->' for a single-line body, or 'BEGIN ... END' for a multi-line function body");
         return new FunDefNode(name, args, expr());
+    }
+
+    /**
+     * Constructor:  INIT(args) BEGIN stmt stmt ... END   (or  INIT(args) -> expr)
+     * Parsed like a function but stored under the reserved member name "__init__",
+     * so NEW ClassName(args) can find and run it.
+     */
+    private Node constructorDef() {
+        Token kw = current; advance();                    // consume INIT
+        Token name = new Token("IDENTIFIER", "__init__", kw.posStart(), kw.posEnd());
+        if (current != null && current.type().equals("LPAREN")) advance();
+        List<Token> args = new ArrayList<>();
+        if (current != null && current.type().equals("IDENTIFIER")) {
+            args.add(current); advance();
+            while (current != null && current.type().equals("COMMA")) { advance(); args.add(current); advance(); }
+        }
+        if (current != null && current.type().equals("RPAREN")) advance();
+
+        if (current != null && current.type().equals("ARROW")) { advance(); return new FunDefNode(name, args, expr()); }
+        if (current == null || !current.type().equals("KEYWORD") || !"BEGIN".equals(current.value()))
+            throw new RuntimeException("Expected '->' or 'BEGIN ... END' for an INIT constructor body");
+        return new FunDefNode(name, args, expr());
+    }
+
+    /**
+     * NEW ClassName(args)  — instantiate a class into a fresh object.
+     */
+    private Node newExpr() {
+        Position start = current.posStart(); advance();   // consume NEW
+        Token className = current; advance();              // consume ClassName
+        List<Node> args = new ArrayList<>();
+        if (current != null && current.type().equals("LPAREN")) {
+            advance();
+            if (current != null && !current.type().equals("RPAREN")) {
+                args.add(expr());
+                while (current != null && current.type().equals("COMMA")) { advance(); args.add(expr()); }
+            }
+            if (current != null && current.type().equals("RPAREN")) advance();
+        }
+        Position end = className.posEnd();
+        return new NewNode(className, args, start, end);
     }
 
     private Node binOp(java.util.function.Supplier<Node> func, List<String> ops) {

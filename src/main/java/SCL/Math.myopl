@@ -23,4 +23,12 @@ CLASS Math BEGIN
          RETURN -1
    END
 
+   FUN min(a,b) BEGIN
+      IF a < b THEN
+         RETURN a
+      ELSE
+         RETURN b
+   END
+
+
 END

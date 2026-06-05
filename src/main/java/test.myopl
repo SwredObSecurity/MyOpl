@@ -1,61 +1,91 @@
 #*
-  Multi-line comment test:
-  this whole block should be ignored,
-  including symbols like (Logic & Return) and keywords WHILE/FOR.
+  MyOPL feature tour — every language feature in one runnable file.
+  Each PRINT notes its expected output. Runs non-interactively
+  (the INPUT examples in section 14 are commented out on purpose).
 *#
+
 # 1. Variables and Math
 VAR x = 10
 VAR y = (x * 5) / 2
-PRINT("Math Test (Expected 25):", y)
+PRINT("Math Test (Expected 25.0):", y)
 
-# 2. Strings and Concatenation
+# 2. CONST — a value that cannot be reassigned (try `CONST k = 1  VAR k = 2` -> error)
+CONST MAX = 100
+PRINT("Constant (Expected 100):", MAX)
+
+# 3. Unary minus / plus (binds tighter than * and /)
+PRINT("Unary minus literal (Expected -5.0):", -5)
+PRINT("Negate a variable (Expected -10.0):", -x)
+PRINT("Double negative (Expected 5.0):", 2 - -3)
+PRINT("Unary in product (Expected -20.0):", -2 * x)
+
+# 4. Strings, concatenation and escapes
 VAR name = "User"
 PRINT("Hello " + name + "!")
+PRINT("Escapes ->\n\tindented second line")
 
-# 3. Lists and Built-ins
+# 5. Chars — single-quoted, exactly one character
+VAR grade = 'A'
+PRINT("Char literal (Expected A):", grade)
+PRINT("Char concatenation (Expected abc):", 'a' + 'b' + 'c')
+
+# 6. Equality on text (chars and strings), not just numbers
+PRINT("Char equality (Expected 1.0):", grade == 'A')
+PRINT("Char inequality (Expected 0.0):", grade == 'B')
+PRINT("String equality (Expected 1.0):", "hi" == "hi")
+
+# 7. Lists and built-ins
 VAR myList = [1, 2, 3, 4]
-PRINT("List Length (Expected 4):", LEN(myList))
+PRINT("List Length (Expected 4.0):", LEN(myList))
 
-# 4. Functions (Single-line)
+# 8. Functions (single-line, arrow)
 FUN square(n) -> n * n
-PRINT("Square of 4 (Expected 16):", square(4))
+PRINT("Square of 4 (Expected 16.0):", square(4))
 
-# 5. Functions (Logic & Return)
-FUN checkStatus(val) ->
-    IF val > 20 THEN "High" ELSE "Low"
-
+# 9. Functions (single-line returning an IF expression)
+FUN checkStatus(val) -> IF val > 20 THEN "High" ELSE "Low"
 PRINT("Status Check (Expected High):", checkStatus(y))
 
-# 6. Loops (FOR)
+# 10. Functions (multi-line, BEGIN...END, with RETURN and ELSE IF chaining)
+FUN classify(n) BEGIN
+    IF n > 0 THEN
+        RETURN "positive"
+    ELSE IF n < 0 THEN
+        RETURN "negative"
+    ELSE
+        RETURN "zero"
+END
+PRINT("classify(5)  (Expected positive):", classify(5))
+PRINT("classify(-5) (Expected negative):", classify(-5))
+PRINT("classify(0)  (Expected zero):", classify(0))
+
+# 11. Loops (FOR, with optional STEP)
 PRINT("Counting 1 to 3:")
 FOR i = 1 TO 3 THEN
     PRINT("Count:", i)
 
-# 7. Loops (WHILE)
+# 12. Loops (WHILE)
 VAR count = 0
 WHILE count < 2 THEN BEGIN
     VAR count = count + 1
     PRINT("While Loop iteration:", count)
 END
 
-# 8. File I/O (non-interactive, safe to run)
+# 13. File I/O (non-interactive, safe to run)
 VAR path = "myopl_io_demo.txt"
 WRITE_FILE(path, "Hello from MyOPL!")
 PRINT("File contents after WRITE_FILE:", READ_FILE(path))
 APPEND_FILE(path, " Appended line.")
 PRINT("File contents after APPEND_FILE:", READ_FILE(path))
 
-# 9. Console I/O examples (commented out so this file runs non-interactively).
-#    Uncomment any block below to try it in the REPL or a script.
+# 14. Console I/O (commented out so this file runs non-interactively).
+#     Uncomment to try in the REPL or a script.
+# VAR userName = INPUT("Enter your name: ")
+# PRINT("Hello", userName)
+# VAR userAge = INPUT_NUM("Enter your age: ")
+# IF userAge >= 18 THEN PRINT("Adult") ELSE PRINT("Minor")
 
-VAR userName = INPUT("Enter your name: ")
-PRINT("Hello", userName)
-
-VAR userAge = INPUT_NUM("Enter your age: ")
-IF userAge >= 18 THEN PRINT("Adult") ELSE PRINT("Minor")
-
-
-# 10. Class Definition
+# 15. Classes — static-style use (call methods/fields straight off the class)
 CLASS Calculator BEGIN
     FUN add(a, b) -> a + b
     FUN subtract(a, b) -> a - b
@@ -67,9 +97,33 @@ PRINT("Class subtract (Expected 5.0):", Calculator.subtract(10, 5))
 PRINT("Class field (Expected 2.0):", Calculator.version)
 PRINT("Class IF method (Expected Yes):", Calculator.isPositive(7))
 
-# 11. Import
+# 16. Constructors (INIT) and objects (NEW) — each instance has its own fields
+CLASS Point BEGIN
+    VAR px = 0
+    VAR py = 0
+    INIT(a, b) BEGIN
+        VAR px = a
+        VAR py = b
+    END
+    FUN sum() -> px + py
+    FUN describe() -> "Point(" + px + ", " + py + ")"
+END
+VAR p = NEW Point(3, 4)
+PRINT("Instance method (Expected 7.0):", p.sum())
+PRINT("Instance describe (Expected Point(3.0, 4.0)):", p.describe())
+VAR q = NEW Point(10, 20)
+PRINT("Second instance independent (Expected 30.0):", q.sum())
+PRINT("First instance unchanged (Expected 7.0):", p.sum())
+PRINT("Chained NEW (Expected Point(1.0, 2.0)):", NEW Point(1, 2).describe())
+
+# 17. Import — pull another file's classes into this scope
 IMPORT "MathHelper.myopl"
 PRINT("Imported add (Expected 7.0):", MathHelper.add(3, 4))
 PRINT("Imported multiply (Expected 12.0):", MathHelper.multiply(3, 4))
 PRINT("Imported square (Expected 25.0):", MathHelper.square(5))
 PRINT("Imported field PI (Expected 3.14159):", MathHelper.PI)
+
+# 18. Standard Class Library (SCL/Math.myopl is auto-loaded at startup)
+PRINT("Math.pi (Expected 3.14159265358979):", Math.pi)
+PRINT("Math.abs(-5) (Expected 5.0):", Math.abs(-5))
+PRINT("Math.sign(-7) (Expected -1.0):", Math.sign(-7))

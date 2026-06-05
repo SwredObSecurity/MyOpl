@@ -6,7 +6,7 @@ public class Lexer {
     private Position pos;
     private Character currentChar;
     private static final List<String> KEYWORDS = List.of(
-        "VAR", "CONST", "FUN", "RETURN", "IF", "THEN", "ELSE",
+        "VAR", "CONST", "FUN", "INIT", "NEW", "RETURN", "IF", "THEN", "ELSE",
         "FOR", "TO", "STEP", "WHILE", "BEGIN", "END",
         "CLASS", "IMPORT"
     );
@@ -39,6 +39,7 @@ public class Lexer {
                 }
             }
             else if (currentChar == '"') tokens.add(makeString());
+            else if (currentChar == '\'') tokens.add(makeChar());
             else if (Character.isDigit(currentChar)) tokens.add(makeNumber());
             else if (Character.isLetter(currentChar) || currentChar == '_') tokens.add(makeIdentifier());
             else if (currentChar == '.') { tokens.add(new Token("DOT", pos.copy(), pos.copy())); advance(); }
@@ -97,6 +98,32 @@ public class Lexer {
             } else { sb.append(currentChar); advance(); }
         }
         advance(); return new Token("STRING", sb.toString(), start, pos.copy());
+    }
+
+    /** A character literal:  'x'  '\n'  '\''  — exactly one character between single quotes. */
+    private Token makeChar() {
+        Position start = pos.copy(); advance();           // consume opening '
+        if (currentChar == null || currentChar == '\'')
+            throw new RuntimeException("Empty character literal: '' must contain exactly one character");
+        char c;
+        if (currentChar == '\\') {
+            advance();
+            if (currentChar == null) throw new RuntimeException("Unterminated character literal");
+            c = switch (currentChar) {
+                case 'n'  -> '\n';
+                case 't'  -> '\t';
+                case 'r'  -> '\r';
+                case '0'  -> '\0';
+                case '\'' -> '\'';
+                case '\\' -> '\\';
+                default   -> currentChar;                 // unknown escape → the char itself
+            };
+            advance();
+        } else { c = currentChar; advance(); }
+        if (currentChar == null || currentChar != '\'')
+            throw new RuntimeException("Character literal must be exactly one character, closed with '");
+        advance();                                        // consume closing '
+        return new Token("CHAR", String.valueOf(c), start, pos.copy());
     }
 
     private Token makeNumber() {

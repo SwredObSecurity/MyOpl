@@ -39,6 +39,7 @@ public class Interpreter {
         return switch (node) {
             case NumberNode n -> n.token().value();
             case StringNode s -> s.token().value();
+            case CharNode c   -> c.token().value();
             case ListNode l -> {
                 List<Object> res = new ArrayList<>();
                 for (Node n : l.elementNodes()) res.add(visit(n));
@@ -131,6 +132,49 @@ public class Interpreter {
                 }
                 throw new RuntimeException("Not a class: cannot access '." + memberName + "'");
             }
+
+            case NewNode nw -> {
+                String className = (String) nw.classNameToken().value();
+                Object classObj = symbols.get(className);
+                if (!(classObj instanceof Map<?,?> raw))
+                    throw new RuntimeException("Cannot instantiate '" + className + "': not a class");
+                @SuppressWarnings("unchecked")
+                Map<String, Object> classScope = (Map<String, Object>) raw;
+
+                // Each instance gets its own copy of the class's members/fields.
+                Map<String, Object> instance = new HashMap<>(classScope);
+
+                Object ctorObj = classScope.get("__init__");
+                if (ctorObj instanceof FunDefNode ctor) {
+                    // Evaluate constructor args in the CALLER's scope first.
+                    List<Object> argVals = new ArrayList<>();
+                    for (Node a : nw.argNodes()) argVals.add(visit(a));
+
+                    Map<String, Object> saved = symbols;
+                    Set<String> savedConsts = constants;
+                    symbols = new HashMap<>(saved);   // keep builtins + globals visible
+                    symbols.putAll(instance);          // class members visible to the ctor
+                    Set<String> argNames = new HashSet<>();
+                    for (int i = 0; i < ctor.argNameTokens().size(); i++) {
+                        String an = (String) ctor.argNameTokens().get(i).value();
+                        argNames.add(an);
+                        symbols.put(an, i < argVals.size() ? argVals.get(i) : 0.0);
+                    }
+                    constants = new HashSet<>(savedConsts);
+                    callBody(ctor);
+
+                    // Persist fields the ctor declared/changed (class members or brand-new
+                    // names), but not its parameters, builtins, or pre-existing globals.
+                    for (String k : symbols.keySet()) {
+                        if (argNames.contains(k) || BUILTINS.contains(k)) continue;
+                        if (classScope.containsKey(k) || !saved.containsKey(k))
+                            instance.put(k, symbols.get(k));
+                    }
+                    symbols = saved;
+                    constants = savedConsts;
+                }
+                yield instance;
+            }
         };
     }
 
@@ -215,6 +259,13 @@ public class Interpreter {
         Object right = visit(b.rightNode());
         if (b.opToken().type().equals("PLUS") && (left instanceof String || right instanceof String))
             return String.valueOf(left) + String.valueOf(right);
+        // Equality works on text too (chars and strings), not just numbers.
+        if ((b.opToken().type().equals("EE") || b.opToken().type().equals("NE"))
+                && (left instanceof String || right instanceof String)) {
+            boolean equal = String.valueOf(left).equals(String.valueOf(right));
+            boolean want  = b.opToken().type().equals("EE") ? equal : !equal;
+            return want ? 1.0 : 0.0;
+        }
         double l = ((Number) left).doubleValue();
         double r = ((Number) right).doubleValue();
         return switch (b.opToken().type()) {
