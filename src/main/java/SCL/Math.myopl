@@ -98,4 +98,166 @@ CLASS Math BEGIN
    FUN remap(v,inLo,inHi,outLo,outHi) BEGIN
       RETURN (outLo + (outHi - outLo) * ((v - inLo) / (inHi - inLo)))
    END
+
+   # --- rounding (loop-based: meant for modest magnitudes) ---
+
+   # largest whole number <= n  (works for negatives: floor(-2.5) = -3)
+   FUN floor(n) BEGIN
+      VAR i = 0
+      IF n >= 0 THEN BEGIN
+         WHILE i + 1 <= n THEN BEGIN
+            VAR i = i + 1
+         END
+      END ELSE BEGIN
+         WHILE i > n THEN BEGIN
+            VAR i = i - 1
+         END
+      END
+      RETURN i
+   END
+
+   # smallest whole number >= n
+   FUN ceil(n) BEGIN
+      RETURN -floor(-n)
+   END
+
+   # nearest whole number, halves round up:  round(2.5) = 3, round(-2.5) = -2
+   FUN round(n) BEGIN
+      RETURN floor(n + 0.5)
+   END
+
+   # whole part toward zero:  trunc(2.9) = 2, trunc(-2.9) = -2
+   FUN trunc(n) BEGIN
+      IF n >= 0 THEN
+         RETURN floor(n)
+      ELSE
+         RETURN ceil(n)
+   END
+
+   # fractional part in [0, 1):  frac(2.25) = 0.25
+   FUN frac(n) BEGIN
+      RETURN n - floor(n)
+   END
+
+   # a mod b  (floored modulo; result takes the sign of b)
+   FUN mod(a, b) BEGIN
+      RETURN a - floor(a / b) * b
+   END
+
+   # 1 if n is even, else 0  (n should be a whole number)
+   FUN isEven(n) BEGIN
+      IF mod(n, 2) == 0 THEN
+         RETURN 1
+      ELSE
+         RETURN 0
+   END
+
+   # 1 if n is odd, else 0
+   FUN isOdd(n) BEGIN
+      IF mod(n, 2) == 0 THEN
+         RETURN 0
+      ELSE
+         RETURN 1
+   END
+
+   # --- powers and roots ---
+
+   # base raised to a WHOLE exponent (negative exponent allowed)
+   FUN pow(base, exp) BEGIN
+      IF exp == 0 THEN
+         RETURN 1
+      IF exp < 0 THEN
+         RETURN 1 / pow(base, -exp)
+      VAR result = 1
+      VAR i = 0
+      WHILE i < exp THEN BEGIN
+         VAR result = result * base
+         VAR i = i + 1
+      END
+      RETURN result
+   END
+
+   # square root via Newton's method (returns 0 for n <= 0)
+   FUN sqrt(n) BEGIN
+      IF n <= 0 THEN
+         RETURN 0
+      VAR guess = n
+      VAR i = 0
+      WHILE i < 30 THEN BEGIN
+         VAR guess = (guess + n / guess) / 2
+         VAR i = i + 1
+      END
+      RETURN guess
+   END
+
+   # length of the hypotenuse: sqrt(a*a + b*b)
+   FUN hypot(a, b) BEGIN
+      RETURN sqrt(a * a + b * b)
+   END
+
+   # straight-line distance between (x1,y1) and (x2,y2)
+   FUN distance(x1, y1, x2, y2) BEGIN
+      VAR dx = x2 - x1
+      VAR dy = y2 - y1
+      RETURN sqrt(dx * dx + dy * dy)
+   END
+
+   # --- number theory ---
+
+   # n!  (factorial; factorial(0) = 1)
+   FUN factorial(n) BEGIN
+      VAR result = 1
+      VAR i = 2
+      WHILE i <= n THEN BEGIN
+         VAR result = result * i
+         VAR i = i + 1
+      END
+      RETURN result
+   END
+
+   # greatest common divisor (Euclid's algorithm)
+   FUN gcd(a, b) BEGIN
+      VAR x = abs(a)
+      VAR y = abs(b)
+      WHILE y > 0 THEN BEGIN
+         VAR t = mod(x, y)
+         VAR x = y
+         VAR y = t
+      END
+      RETURN x
+   END
+
+   # least common multiple
+   FUN lcm(a, b) BEGIN
+      IF a == 0 THEN
+         RETURN 0
+      IF b == 0 THEN
+         RETURN 0
+      RETURN abs(a * b) / gcd(a, b)
+   END
+
+   # --- misc helpers ---
+
+   # 1 / n
+   FUN reciprocal(n) BEGIN
+      RETURN 1 / n
+   END
+
+   # clamp n into [0, 1]
+   FUN clamp01(n) BEGIN
+      RETURN clamp(n, 0, 1)
+   END
+
+   # smallest / largest of three
+   FUN min3(a, b, c) -> min(a, min(b, c))
+   FUN max3(a, b, c) -> max(a, max(b, c))
+
+   # degrees <-> radians
+   FUN toRadians(deg) BEGIN
+      RETURN deg * pi / 180
+   END
+
+   FUN toDegrees(rad) BEGIN
+      RETURN rad * 180 / pi
+   END
 END

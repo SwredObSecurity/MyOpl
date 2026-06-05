@@ -38,7 +38,3 @@ Thumbs.db
 
 ### Java compiled class files ###
 *.class
-
-### Runtime artefacts produced by the test script ###
-myopl_io_demo.txt
-src/main/java/myopl_io_demo.txt

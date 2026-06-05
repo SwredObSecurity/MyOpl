@@ -1,5 +1,6 @@
 package lang;
 import java.util.*;
+import java.util.stream.Stream;
 import java.nio.file.*;
 
 public class Interpreter {
@@ -7,6 +8,12 @@ public class Interpreter {
     private Set<String> constants = new HashSet<>();
     private final Scanner stdin = new Scanner(System.in);
     private String baseDir = ".";
+
+    /** Root of the Standard Class Library, searched as a fallback for bare
+     *  imports like  IMPORT "Random.myopl"  so they resolve from any script.
+     *  Shared across the main interpreter and every sub-interpreter. */
+    private static String sclRoot = null;
+    public static void setSclRoot(String dir) { sclRoot = dir; }
 
     private record BoundMethod(FunDefNode fun, Map<String, Object> classScope) {}
 
@@ -28,6 +35,28 @@ public class Interpreter {
     }
 
     public void setBaseDir(String dir) { this.baseDir = dir; }
+
+    /**
+     * Resolve an IMPORT target. First look next to the current file
+     * (baseDir/pathStr). If that does not exist, fall back to searching the
+     * Standard Class Library tree by file name, so a bare
+     * {@code IMPORT "Random.myopl"} finds SCL/Extras/Random.myopl from any
+     * script. If nothing matches, return the local path so the subsequent
+     * read throws a clear "no such file" error for the path the user wrote.
+     */
+    private Path resolveImport(String pathStr) {
+        Path local = Path.of(baseDir).resolve(pathStr);
+        if (Files.exists(local) || sclRoot == null) return local;
+        String wanted = Path.of(pathStr).getFileName().toString();
+        try (Stream<Path> tree = Files.walk(Path.of(sclRoot))) {
+            Optional<Path> hit = tree
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.getFileName().toString().equalsIgnoreCase(wanted))
+                    .findFirst();
+            if (hit.isPresent()) return hit.get();
+        } catch (Exception ignored) {}
+        return local;
+    }
 
     public Map<String, Object> getPublicSymbols() {
         Map<String, Object> pub = new HashMap<>(symbols);
@@ -102,7 +131,7 @@ public class Interpreter {
 
             case ImportNode imp -> {
                 String pathStr = (String) imp.pathToken().value();
-                Path filePath  = Path.of(baseDir).resolve(pathStr);
+                Path filePath  = resolveImport(pathStr);
                 try {
                     String code   = Files.readString(filePath);
                     String subDir = filePath.getParent() != null
@@ -221,11 +250,15 @@ public class Interpreter {
 
         if (callable instanceof BoundMethod bm) {
             FunDefNode def = bm.fun();
+            // Evaluate arguments in the CALLER's scope FIRST, before switching scopes,
+            // so nested calls like f(a, g(b)) and caller-shadowed names resolve correctly.
+            List<Object> argVals = new ArrayList<>();
+            for (Node n : call.argNodes()) argVals.add(visit(n));
             Map<String, Object> snap = new HashMap<>(symbols);
             Set<String> constSnap = new HashSet<>(constants);
             symbols.putAll(bm.classScope());
-            for (int i = 0; i < def.argNameTokens().size(); i++)
-                symbols.put((String) def.argNameTokens().get(i).value(), visit(call.argNodes().get(i)));
+            for (int i = 0; i < def.argNameTokens().size() && i < argVals.size(); i++)
+                symbols.put((String) def.argNameTokens().get(i).value(), argVals.get(i));
             Object res = callBody(def);
             // Persist writes to the object's OWN fields back into it, so methods
             // can mutate instance/class state across calls (e.g. a Random's seed).
@@ -237,10 +270,12 @@ public class Interpreter {
         }
 
         FunDefNode def = (FunDefNode) callable;
+        List<Object> argVals = new ArrayList<>();
+        for (Node n : call.argNodes()) argVals.add(visit(n));
         Map<String, Object> snap = new HashMap<>(symbols);
         Set<String> constSnap = new HashSet<>(constants);
-        for (int i = 0; i < def.argNameTokens().size(); i++)
-            symbols.put((String) def.argNameTokens().get(i).value(), visit(call.argNodes().get(i)));
+        for (int i = 0; i < def.argNameTokens().size() && i < argVals.size(); i++)
+            symbols.put((String) def.argNameTokens().get(i).value(), argVals.get(i));
         Object res = callBody(def);
         symbols = snap;
         constants = constSnap;

@@ -40,6 +40,7 @@ public class Shell {
     private static void loadStandardClassLibrary() {
         Path sclDir = locateSclDir();
         if (sclDir == null || !Files.isDirectory(sclDir)) return;
+        Interpreter.setSclRoot(sclDir.toString());
         interpreter.setBaseDir(sclDir.toString());
         try (Stream<Path> stream = Files.list(sclDir)) {
             stream.filter(p -> p.toString().toLowerCase().endsWith(".myopl"))
