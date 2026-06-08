@@ -4,8 +4,8 @@
 
 KEYWORDS:
   VAR, CONST, FUN, INIT, NEW, RETURN, IF, THEN, ELSE, FOR, TO, STEP, WHILE,
-  BEGIN, END, CLASS, IMPORT
-  (Keywords are case-sensitive and uppercase.)
+  BEGIN, END, CLASS, IMPORT, TRUE, FALSE
+  (Keywords are case-sensitive and uppercase. e.g. NEW works, `new` does not.)
 
 COMMENTS:
   # ...           Single-line comment. Everything from # to end of line is ignored.
@@ -27,6 +27,17 @@ CHARACTERS:
                   with strings ( 'x' == "x" is true ). Empty '' or multi-char 'ab'
                   is a lex-time error.
                     'A'   '7'   '\n'   '\''
+
+BOOLEANS:
+  TRUE            The number 1. FALSE is the number 0.
+  FALSE           MyOPL has no separate boolean type: 0 is false and any
+                  nonzero value is true (the same convention IF / WHILE and the
+                  comparison operators use). TRUE / FALSE are just readable
+                  names you can use anywhere a number is expected.
+                    VAR done = FALSE
+                    IF TRUE THEN PRINT("always runs")
+                  The Bool class in the standard library adds logic helpers
+                  (and, or, not, xor, ...). See STANDARD CLASS LIBRARY below.
 
 VARIABLES AND CONSTANTS:
   VAR name = expr     Declares or reassigns a variable in the current scope.
@@ -83,7 +94,7 @@ GRAMMAR:
   Term       -> Unary ((MUL | DIV) Unary)*
   Unary      -> (PLUS | MINUS) Unary | Factor
   Factor     -> Atom ( (args) | .ID )*
-  Atom       -> INT | FLOAT | STRING | CHAR | ID | [list] | (Expr)
+  Atom       -> INT | FLOAT | STRING | CHAR | TRUE | FALSE | ID | [list] | (Expr)
                 | FunDef | Constructor | NewExpr | BEGIN Expr* END
   FunDef     -> FUN ID? ( ( ID (, ID)* )? )
                   ( -> Expr            # single-line: body is the returned expression
@@ -203,7 +214,7 @@ CONSTRUCTORS (INIT) AND OBJECTS (NEW):
 
   STATEFUL METHODS: a method may reassign its object's own fields (with VAR), and
   the change PERSISTS on that object for later calls — so objects can carry state
-  that evolves over time. See SCL/Extras/Random.myopl, whose draw methods advance an
+  that evolves over time. See SCL/Random.myopl, whose draw methods advance an
   internal seed. (Only the object's declared fields persist; brand-new names and
   parameters created inside a method stay local to that call.)
 
@@ -223,8 +234,55 @@ IMPORT:
     PRINT(MathHelper.PI)                 # 3.14159
 
 =========================================
+      STANDARD CLASS LIBRARY (SCL)
+=========================================
+
+The SCL is a set of .myopl classes shipped with the language under
+src/main/java/SCL/.
+
+AUTO-LOADED (no IMPORT needed):
+  Every file in SCL/STD/ is loaded at startup, so its class is available
+  immediately. The scan is NON-recursive (only files directly in SCL/STD/).
+
+    Math       - constants (PI, E, TAU, PHI, SQRT2, LN2, LN10; lowercase aliases
+                 too) and numeric helpers: abs, sign, min, max, clamp, sqrt, pow,
+                 mod, floor, ceil, round, factorial, gcd, lcm, isPositive,
+                 isNegative, isZero, approxEqual, lerp, remap, ...
+    Bool       - TRUE / FALSE plus logic: not, and, or, xor, nand, nor, implies,
+                 iff, toString, ...
+    Compare    - eq, neq, lt, gt, lte, gte, between, inRange, max3, min3, clamp,
+                 approxEqual
+    Convert    - unit conversions (temperature, length, mass, time, angle, data)
+    Logging    - info, warn, error, debug, success, divider, banner, step, blank
+    Constants  - common math / physics / time constants in one place
+    Assert     - assertEqual, assertTrue, assertApprox, assertPositive, ... (prints
+                 PASS / FAIL)
+    FileIO     - read, write, append, clear, copy, writeAndConfirm
+    Geometry   - areas, perimeters, volumes, distances (uses Math)
+    Physics    - force, energy, momentum, pressure, ... (uses Math)
+    Finance    - simple/compound interest, future/present value, tax, tip, ... (uses Math)
+    Calendar   - daysInMonth, isLeapYear, quarterOf, isWeekend (uses Math)
+    Console    - println, print, readLine, nextInt, nextDouble (Scanner-like)
+
+  USE: just call them, e.g.
+    PRINT(Math.sqrt(2))
+    IF Bool.and(a, b) THEN PRINT("both true")
+    PRINT(Geometry.distance2D(0, 0, 3, 4))     # 5.0
+
+NEEDS IMPORT (top-level SCL/, not auto-loaded):
+    SCL/Random.myopl   - seedable pseudo-random generator (deterministic per seed)
+    SCL/List.myopl     - growable ordered list (ArrayList-like)
+    SCL/File.myopl     - object wrapper around a single file path
+
+    IMPORT "SCL/List.myopl"
+    VAR xs = NEW List()
+    xs.add(10)  xs.add(20)
+    PRINT(xs.get(1))                            # 20.0
+
+=========================================
       HOW TO RUN
 =========================================
-1. Compile: javac Shell.java lang/*.java
-2. REPL:    java Shell
-3. File:    java Shell script.myopl
+  Compile (from src/main/java):  javac Shell.java lang/*.java
+  Run:                           java Shell
+                                 (Shell asks for a file path; blank = REPL)
+  The SCL/STD classes auto-load before your script runs.

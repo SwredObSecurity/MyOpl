@@ -123,7 +123,56 @@ PRINT("Imported multiply (Expected 12.0):", MathHelper.multiply(3, 4))
 PRINT("Imported square (Expected 25.0):", MathHelper.square(5))
 PRINT("Imported field PI (Expected 3.14159):", MathHelper.PI)
 
-# 18. Standard Class Library (SCL/Math.myopl is auto-loaded at startup)
-PRINT("Math.pi (Expected 3.14159265358979):", Math.pi)
+# 18. Booleans — TRUE / FALSE keywords (just 1 / 0 under the hood)
+VAR yes = TRUE
+VAR no  = FALSE
+PRINT("TRUE (Expected 1.0):", yes)
+PRINT("FALSE (Expected 0.0):", no)
+IF TRUE THEN PRINT("TRUE is truthy (Expected: this prints)")
+PRINT("Bool.and(TRUE, FALSE) (Expected 0.0):", Bool.and(TRUE, FALSE))
+PRINT("Bool.or(TRUE, FALSE)  (Expected 1.0):", Bool.or(TRUE, FALSE))
+PRINT("Bool.not(FALSE)       (Expected 1.0):", Bool.not(FALSE))
+PRINT("Bool.xor(TRUE, TRUE)  (Expected 0.0):", Bool.xor(TRUE, TRUE))
+PRINT("Bool.toString(TRUE)   (Expected true):", Bool.toString(TRUE))
+
+# 19. Standard Class Library — every SCL/STD/*.myopl auto-loads at startup,
+#     so these classes are ready without any IMPORT.
+PRINT("Math.PI (Expected 3.14159265358979):", Math.PI)
 PRINT("Math.abs(-5) (Expected 5.0):", Math.abs(-5))
 PRINT("Math.sign(-7) (Expected -1.0):", Math.sign(-7))
+PRINT("Math.sqrt(2) (Expected ~1.41421):", Math.sqrt(2))
+PRINT("Math.pow(2, 10) (Expected 1024.0):", Math.pow(2, 10))
+PRINT("Math.mod(17, 5) (Expected 2.0):", Math.mod(17, 5))
+PRINT("Math.factorial(5) (Expected 120.0):", Math.factorial(5))
+
+PRINT("Compare.max3(4, 9, 2) (Expected 9.0):", Compare.max3(4, 9, 2))
+PRINT("Compare.between(5, 1, 10) (Expected 1.0):", Compare.between(5, 1, 10))
+
+PRINT("Convert.celsiusToFahrenheit(100) (Expected 212.0):", Convert.celsiusToFahrenheit(100))
+PRINT("Convert.milesToKm(1) (Expected 1.609344):", Convert.milesToKm(1))
+
+PRINT("Geometry.distance2D(0,0,3,4) (Expected 5.0):", Geometry.distance2D(0, 0, 3, 4))
+PRINT("Geometry.circleArea(2) (Expected ~12.566):", Geometry.circleArea(2))
+
+PRINT("Physics.force(10, 2) (Expected 20.0):", Physics.force(10, 2))
+PRINT("Finance.simpleInterest(1000, 5, 2) (Expected 100.0):", Finance.simpleInterest(1000, 5, 2))
+
+PRINT("Calendar.daysInMonth(2) (Expected 28.0):", Calendar.daysInMonth(2))
+PRINT("Calendar.isLeapYear(2000) (Expected 1.0):", Calendar.isLeapYear(2000))
+
+PRINT("Constants.DAY_SECONDS (Expected 86400.0):", Constants.DAY_SECONDS)
+Logging.success("Logging.success prints a tagged line")
+Assert.assertEqual(Math.square(4), 16, "Assert: Math.square(4) == 16")
+
+# 20. Importing top-level SCL classes (NOT auto-loaded — these need IMPORT)
+IMPORT "SCL/Random.myopl"
+IMPORT "SCL/List.myopl"
+VAR rng = NEW Random(42)
+PRINT("Random.nextInt(100) (deterministic per seed):", rng.nextInt(100))
+VAR items = NEW List()
+items.add(10)
+items.add(20)
+items.add(30)
+PRINT("List size (Expected 3.0):", items.size())
+PRINT("List get(1) (Expected 20.0):", items.get(1))
+PRINT("List toString (Expected [10.0, 20.0, 30.0]):", items.toString())
