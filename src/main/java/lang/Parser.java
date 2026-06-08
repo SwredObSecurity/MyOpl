@@ -144,6 +144,13 @@ public class Parser {
             if (current.value().equals("FUN")) return funDef();
             if (current.value().equals("INIT")) return constructorDef();
             if (current.value().equals("NEW")) return newExpr();
+            // Boolean literals are just 1 / 0 under the hood, matching how
+            // comparisons and IF/WHILE already represent truth in this language.
+            if (current.value().equals("TRUE") || current.value().equals("FALSE")) {
+                Token t = current; advance();
+                double v = t.value().equals("TRUE") ? 1.0 : 0.0;
+                return new NumberNode(new Token("INT", v, t.posStart(), t.posEnd()));
+            }
             if (current.value().equals("BEGIN")) {
                 Position s = current.posStart(); advance();
                 List<Node> stmts = new ArrayList<>();

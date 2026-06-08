@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 public class Shell {
     private static final Interpreter interpreter = new Interpreter();
     private static final String SCL_DIR_NAME = "SCL";
+    private static final String STD_DIR_NAME = "STD";
 
     public static void main(String[] args) {
         loadStandardClassLibrary();
@@ -40,9 +41,14 @@ public class Shell {
     private static void loadStandardClassLibrary() {
         Path sclDir = locateSclDir();
         if (sclDir == null || !Files.isDirectory(sclDir)) return;
+        // Keep the whole SCL tree as the import-search root so explicit
+        // IMPORTs (List, Random, File, ...) still resolve from any script.
         Interpreter.setSclRoot(sclDir.toString());
-        interpreter.setBaseDir(sclDir.toString());
-        try (Stream<Path> stream = Files.list(sclDir)) {
+        // Auto-load only the STD subdirectory; everything else needs IMPORT.
+        Path stdDir = sclDir.resolve(STD_DIR_NAME);
+        if (!Files.isDirectory(stdDir)) return;
+        interpreter.setBaseDir(stdDir.toString());
+        try (Stream<Path> stream = Files.list(stdDir)) {
             stream.filter(p -> p.toString().toLowerCase().endsWith(".myopl"))
                   .sorted()
                   .forEach(Shell::loadSclFile);

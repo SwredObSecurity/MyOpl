@@ -1,0 +1,115 @@
+#*
+   Bool — makes 1/0 read like true/false in user code.
+
+   MyOPL has no real boolean type: 0 is false, anything nonzero is true (the
+   same values comparisons and IF/WHILE already use). Every function here
+   normalises its inputs the same way, so passing 5 as "true" behaves exactly
+   like passing 1.
+
+       VAR a = Bool.TRUE
+       VAR b = Bool.FALSE
+       PRINT(Bool.and(a, b))        # 0
+       PRINT(Bool.or(a, b))         # 1
+       PRINT(Bool.toString(a))      # "true"
+       IF Bool.not(b) THEN PRINT("b was false")
+*#
+CLASS Bool BEGIN
+
+   CONST TRUE  = 1          # represents truth
+   CONST FALSE = 0          # represents falsehood
+
+   # --- normalisation ---
+
+   # collapse any value to a strict 1 / 0  (nonzero -> 1)
+   FUN of(x) BEGIN
+      IF x == 0 THEN
+         RETURN 0
+      ELSE
+         RETURN 1
+   END
+
+   # --- core logic ---
+
+   # flips truth into falsehood and back
+   FUN not(b) BEGIN
+      IF b == 0 THEN
+         RETURN 1
+      ELSE
+         RETURN 0
+   END
+
+   # true only if BOTH inputs are true
+   FUN and(a, b) BEGIN
+      IF a == 0 THEN
+         RETURN 0
+      IF b == 0 THEN
+         RETURN 0
+      RETURN 1
+   END
+
+   # true if EITHER input is true
+   FUN or(a, b) BEGIN
+      IF a == 0 THEN BEGIN
+         IF b == 0 THEN
+            RETURN 0
+      END
+      RETURN 1
+   END
+
+   # true if EXACTLY ONE input is true (not both)
+   FUN xor(a, b) -> of(a) != of(b)
+
+   # --- derived gates ---
+
+   # opposite of and
+   FUN nand(a, b) -> not(and(a, b))
+
+   # opposite of or
+   FUN nor(a, b) -> not(or(a, b))
+
+   # false ONLY when a is true but b is false
+   FUN implies(a, b) -> or(not(a), b)
+
+   # true when both inputs match (both true or both false)
+   FUN iff(a, b) -> not(xor(a, b))
+
+   # --- conversions ---
+
+   # number -> bool  (nonzero is true)
+   FUN fromNum(n) -> of(n)
+
+   # bool -> "true" / "false"
+   FUN toString(b) BEGIN
+      IF b == 0 THEN
+         RETURN "false"
+      ELSE
+         RETURN "true"
+   END
+
+   # bool -> "yes" / "no"
+   FUN toYesNo(b) BEGIN
+      IF b == 0 THEN
+         RETURN "no"
+      ELSE
+         RETURN "yes"
+   END
+
+   # parse "true"/"yes"/"1" text into a bool; anything else -> 0
+   FUN parse(s) BEGIN
+      IF s == "true" THEN
+         RETURN 1
+      IF s == "yes" THEN
+         RETURN 1
+      IF s == "1" THEN
+         RETURN 1
+      RETURN 0
+   END
+
+   # pick one of two values by a condition  (a tiny ternary helper)
+   FUN choose(cond, ifTrue, ifFalse) BEGIN
+      IF cond == 0 THEN
+         RETURN ifFalse
+      ELSE
+         RETURN ifTrue
+   END
+END

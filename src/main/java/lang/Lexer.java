@@ -8,7 +8,7 @@ public class Lexer {
     private static final List<String> KEYWORDS = List.of(
         "VAR", "CONST", "FUN", "INIT", "NEW", "RETURN", "IF", "THEN", "ELSE",
         "FOR", "TO", "STEP", "WHILE", "BEGIN", "END",
-        "CLASS", "IMPORT"
+        "CLASS", "IMPORT", "TRUE", "FALSE"
     );
 
     public Lexer(String fn, String text) {

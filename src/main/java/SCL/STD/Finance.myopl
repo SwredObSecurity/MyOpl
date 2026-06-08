@@ -1,0 +1,39 @@
+#*
+   Finance — everyday money math. Uses Math.pow for compounding, so Math must
+   be loaded first. Rates are given as percentages (e.g. 5 means 5%).
+
+       PRINT(Finance.simpleInterest(1000, 5, 2))     # 100.0
+       PRINT(Finance.futureValue(1000, 5, 2))        # 1102.5
+*#
+CLASS Finance BEGIN
+
+   # flat interest earned:  p x r x t / 100
+   FUN simpleInterest(p, r, t) -> p * r * t / 100
+
+   # interest with reinvestment after t years (amount minus principal)
+   FUN compoundInterest(p, r, t) -> p * Math.pow(1 + r / 100, t) - p
+
+   # what p grows into at rate r after t years
+   FUN futureValue(p, r, t) -> p * Math.pow(1 + r / 100, t)
+
+   # what amount today equals fv later
+   FUN presentValue(fv, r, t) -> fv / Math.pow(1 + r / 100, t)
+
+   # p percent of n
+   FUN percentOf(n, p) -> n * p / 100
+
+   # percent gain or loss from oldVal to newVal
+   FUN percentChange(oldVal, newVal) -> (newVal - oldVal) / oldVal * 100
+
+   # sale price after taking "off" percent off
+   FUN discount(price, off) -> price - price * off / 100
+
+   # total cost after adding tax
+   FUN tax(amount, rate) -> amount + amount * rate / 100
+
+   # tip amount only (not the total)
+   FUN tip(bill, percent) -> bill * percent / 100
+
+   # selling price after adding markup
+   FUN markup(cost, percent) -> cost + cost * percent / 100
+END

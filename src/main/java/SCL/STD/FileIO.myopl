@@ -1,0 +1,31 @@
+#*
+   FileIO — nicer names and small extras on top of the built-in file functions
+   (READ_FILE / WRITE_FILE / APPEND_FILE).
+
+       FileIO.write("notes.txt", "hello")
+       FileIO.append("notes.txt", " world")
+       PRINT(FileIO.read("notes.txt"))        # hello world
+*#
+CLASS FileIO BEGIN
+
+   # returns the file's contents
+   FUN read(path) -> READ_FILE(path)
+
+   # overwrites the file with text
+   FUN write(path, text) -> WRITE_FILE(path, text)
+
+   # adds text to the end of the file
+   FUN append(path, text) -> APPEND_FILE(path, text)
+
+   # empties the file
+   FUN clear(path) -> WRITE_FILE(path, "")
+
+   # reads one file and writes its contents into another
+   FUN copy(from, to) -> WRITE_FILE(to, READ_FILE(from))
+
+   # writes the file and prints a confirmation message
+   FUN writeAndConfirm(path, text) BEGIN
+      WRITE_FILE(path, text)
+      PRINT("Wrote to " + path)
+   END
+END

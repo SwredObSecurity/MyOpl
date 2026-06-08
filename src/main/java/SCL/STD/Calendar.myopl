@@ -1,0 +1,63 @@
+#*
+   Calendar — date and time math (no real clock, just numbers and rules).
+   Uses Math.mod for the leap-year test, so Math must be loaded first.
+
+   Months are 1-12. Days of the week are 1=Monday .. 7=Sunday.
+
+       PRINT(Calendar.daysInMonth(2))     # 28
+       PRINT(Calendar.isLeapYear(2000))   # 1
+*#
+CLASS Calendar BEGIN
+
+   CONST SECONDS_IN_MINUTE = 60
+   CONST MINUTES_IN_HOUR   = 60
+   CONST HOURS_IN_DAY      = 24
+   CONST DAYS_IN_WEEK      = 7
+   CONST MONTHS_IN_YEAR    = 12
+   CONST DAYS_IN_YEAR      = 365
+   CONST DAYS_IN_LEAP_YEAR = 366
+   CONST WEEKS_IN_YEAR     = 52
+   CONST SECONDS_IN_HOUR   = 3600
+   CONST SECONDS_IN_DAY    = 86400
+   CONST SECONDS_IN_WEEK   = 604800
+
+   # 28, 30 or 31 depending on the month number (February is treated as 28)
+   FUN daysInMonth(m) BEGIN
+      IF m == 2 THEN
+         RETURN 28
+      IF m == 4 THEN
+         RETURN 30
+      IF m == 6 THEN
+         RETURN 30
+      IF m == 9 THEN
+         RETURN 30
+      IF m == 11 THEN
+         RETURN 30
+      RETURN 31
+   END
+
+   # 1 if y is a leap year, else 0
+   FUN isLeapYear(y) BEGIN
+      IF Math.mod(y, 400) == 0 THEN
+         RETURN 1
+      IF Math.mod(y, 100) == 0 THEN
+         RETURN 0
+      IF Math.mod(y, 4) == 0 THEN
+         RETURN 1
+      RETURN 0
+   END
+
+   # which quarter a month falls in: 1, 2, 3 or 4
+   FUN quarterOf(month) BEGIN
+      IF month <= 3 THEN
+         RETURN 1
+      IF month <= 6 THEN
+         RETURN 2
+      IF month <= 9 THEN
+         RETURN 3
+      RETURN 4
+   END
+
+   # 1 if it's Saturday (6) or Sunday (7), else 0
+   FUN isWeekend(dayOfWeek) -> IF dayOfWeek == 6 THEN 1 ELSE IF dayOfWeek == 7 THEN 1 ELSE 0
+END

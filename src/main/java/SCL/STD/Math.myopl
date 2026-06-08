@@ -1,4 +1,13 @@
 CLASS Math BEGIN
+   # Constants — spec names are UPPERCASE; lowercase aliases kept for older scripts.
+   CONST PI = 3.14159265358979
+   CONST E = 2.71828182845904
+   CONST TAU = 6.28318530717958
+   CONST PHI = 1.61803398874989
+   CONST SQRT2 = 1.41421356237309
+   CONST LN2 = 0.69314718055994
+   CONST LN10 = 2.30258509299404
+
    CONST pi = 3.14159265358979
    CONST e = 2.71828182845904
    CONST tau = 6.28318530717958
@@ -82,6 +91,29 @@ CLASS Math BEGIN
 
    FUN isZero(n) BEGIN
       IF n == 0 THEN
+         RETURN 1
+      ELSE
+         RETURN 0
+   END
+
+   # spec-named aliases for the three sign checks above
+   FUN isPositive(n) BEGIN
+      IF n > 0 THEN
+         RETURN 1
+      ELSE
+         RETURN 0
+   END
+
+   FUN isNegative(n) BEGIN
+      IF n < 0 THEN
+         RETURN 1
+      ELSE
+         RETURN 0
+   END
+
+   # 1 if a and b are within eps of each other, else 0
+   FUN approxEqual(a, b, eps) BEGIN
+      IF abs(a - b) <= eps THEN
          RETURN 1
       ELSE
          RETURN 0

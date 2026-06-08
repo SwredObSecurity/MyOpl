@@ -1,0 +1,6 @@
+CLASS MathHelper BEGIN
+    FUN add(a, b) -> a + b
+    FUN multiply(a, b) -> a * b
+    FUN square(n) -> n * n
+    VAR PI = 3.14159
+END

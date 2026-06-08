@@ -1,0 +1,67 @@
+#*
+   Assert — tools for checking your other classes actually do what they say.
+
+   Each prints a [PASS] or [FAIL] line; failures include the details so you
+   can see what went wrong.
+
+       Assert.assertEqual(Math.square(4), 16, "square of 4")
+       Assert.assertApprox(Math.sqrt(2), 1.41421356, 0.0001, "sqrt of 2")
+*#
+CLASS Assert BEGIN
+
+   FUN assertEqual(actual, expected, label) BEGIN
+      IF actual == expected THEN
+         PRINT("[PASS] " + label)
+      ELSE
+         PRINT("[FAIL] " + label + " (expected " + expected + ", got " + actual + ")")
+   END
+
+   FUN assertNotEqual(actual, unexpected, label) BEGIN
+      IF actual == unexpected THEN
+         PRINT("[FAIL] " + label + " (got the unexpected value " + unexpected + ")")
+      ELSE
+         PRINT("[PASS] " + label)
+   END
+
+   FUN assertTrue(condition, label) BEGIN
+      IF condition == 0 THEN
+         PRINT("[FAIL] " + label + " (expected true, got 0)")
+      ELSE
+         PRINT("[PASS] " + label)
+   END
+
+   FUN assertFalse(condition, label) BEGIN
+      IF condition == 0 THEN
+         PRINT("[PASS] " + label)
+      ELSE
+         PRINT("[FAIL] " + label + " (expected false, got " + condition + ")")
+   END
+
+   FUN assertApprox(actual, expected, eps, label) BEGIN
+      IF Math.abs(actual - expected) <= eps THEN
+         PRINT("[PASS] " + label)
+      ELSE
+         PRINT("[FAIL] " + label + " (expected ~" + expected + ", got " + actual + ")")
+   END
+
+   FUN assertPositive(n, label) BEGIN
+      IF n > 0 THEN
+         PRINT("[PASS] " + label)
+      ELSE
+         PRINT("[FAIL] " + label + " (expected > 0, got " + n + ")")
+   END
+
+   FUN assertNegative(n, label) BEGIN
+      IF n < 0 THEN
+         PRINT("[PASS] " + label)
+      ELSE
+         PRINT("[FAIL] " + label + " (expected < 0, got " + n + ")")
+   END
+
+   FUN assertZero(n, label) BEGIN
+      IF n == 0 THEN
+         PRINT("[PASS] " + label)
+      ELSE
+         PRINT("[FAIL] " + label + " (expected 0, got " + n + ")")
+   END
+END

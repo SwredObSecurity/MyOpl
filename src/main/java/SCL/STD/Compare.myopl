@@ -1,0 +1,65 @@
+#*
+   Compare — comparison helpers that read more naturally than raw operators.
+
+   Each returns 1 for true and 0 for false, so the results drop straight into
+   IF / WHILE and the Bool class.
+
+       IF Compare.between(age, 13, 19) THEN PRINT("teenager")
+       PRINT(Compare.max3(4, 9, 2))     # 9
+*#
+CLASS Compare BEGIN
+
+   # equal?
+   FUN eq(a, b) -> IF a == b THEN 1 ELSE 0
+
+   # not equal?
+   FUN neq(a, b) -> IF a == b THEN 0 ELSE 1
+
+   # a less than b?
+   FUN lt(a, b) -> IF a < b THEN 1 ELSE 0
+
+   # a greater than b?
+   FUN gt(a, b) -> IF a > b THEN 1 ELSE 0
+
+   # a less than or equal to b?
+   FUN lte(a, b) -> IF a <= b THEN 1 ELSE 0
+
+   # a greater than or equal to b?
+   FUN gte(a, b) -> IF a >= b THEN 1 ELSE 0
+
+   # is x between lo and hi (inclusive)?
+   FUN between(x, lo, hi) -> IF x < lo THEN 0 ELSE IF x > hi THEN 0 ELSE 1
+
+   # same as between — the name people often expect
+   FUN inRange(x, lo, hi) -> IF x < lo THEN 0 ELSE IF x > hi THEN 0 ELSE 1
+
+   # largest of three numbers
+   FUN max3(a, b, c) BEGIN
+      IF a >= b THEN BEGIN
+         IF a >= c THEN
+            RETURN a
+         RETURN c
+      END
+      IF b >= c THEN
+         RETURN b
+      RETURN c
+   END
+
+   # smallest of three numbers
+   FUN min3(a, b, c) BEGIN
+      IF a <= b THEN BEGIN
+         IF a <= c THEN
+            RETURN a
+         RETURN c
+      END
+      IF b <= c THEN
+         RETURN b
+      RETURN c
+   END
+
+   # keep x inside [lo, hi]  (same as Math.clamp, offered here too)
+   FUN clamp(x, lo, hi) -> IF x < lo THEN lo ELSE IF x > hi THEN hi ELSE x
+
+   # close enough?  (1 if a and b are within eps of each other)
+   FUN approxEqual(a, b, eps) -> IF Math.abs(a - b) <= eps THEN 1 ELSE 0
+END
