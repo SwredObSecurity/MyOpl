@@ -257,22 +257,23 @@ AUTO-LOADED (no IMPORT needed):
     Constants  - common math / physics / time constants in one place
     Assert     - assertEqual, assertTrue, assertApprox, assertPositive, ... (prints
                  PASS / FAIL)
-    FileIO     - read, write, append, clear, copy, writeAndConfirm
-    Geometry   - areas, perimeters, volumes, distances (uses Math)
-    Physics    - force, energy, momentum, pressure, ... (uses Math)
-    Finance    - simple/compound interest, future/present value, tax, tip, ... (uses Math)
-    Calendar   - daysInMonth, isLeapYear, quarterOf, isWeekend (uses Math)
     Console    - println, print, readLine, nextInt, nextDouble (Scanner-like)
 
   USE: just call them, e.g.
     PRINT(Math.sqrt(2))
     IF Bool.and(a, b) THEN PRINT("both true")
-    PRINT(Geometry.distance2D(0, 0, 3, 4))     # 5.0
 
 NEEDS IMPORT (top-level SCL/, not auto-loaded):
+    SCL/Geometry.myopl - areas, perimeters, volumes, distances (uses Math)
+    SCL/Physics.myopl  - force, energy, momentum, pressure, ... (uses Math)
+    SCL/Finance.myopl  - simple/compound interest, future/present value, ... (uses Math)
+    SCL/Calendar.myopl - daysInMonth, isLeapYear, quarterOf, isWeekend (uses Math)
+    SCL/FileIO.myopl   - read, write, append, clear, copy, writeAndConfirm
     SCL/Random.myopl   - seedable pseudo-random generator (deterministic per seed)
     SCL/List.myopl     - growable ordered list (ArrayList-like)
-    SCL/File.myopl     - object wrapper around a single file path
+
+    IMPORT "SCL/Geometry.myopl"
+    PRINT(Geometry.distance2D(0, 0, 3, 4))      # 5.0
 
     IMPORT "SCL/List.myopl"
     VAR xs = NEW List()

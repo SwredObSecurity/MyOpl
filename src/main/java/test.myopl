@@ -135,8 +135,8 @@ PRINT("Bool.not(FALSE)       (Expected 1.0):", Bool.not(FALSE))
 PRINT("Bool.xor(TRUE, TRUE)  (Expected 0.0):", Bool.xor(TRUE, TRUE))
 PRINT("Bool.toString(TRUE)   (Expected true):", Bool.toString(TRUE))
 
-# 19. Standard Class Library — every SCL/STD/*.myopl auto-loads at startup,
-#     so these classes are ready without any IMPORT.
+# 19. Standard Class Library — the core SCL/STD/*.myopl classes auto-load at
+#     startup, so they are ready without any IMPORT.
 PRINT("Math.PI (Expected 3.14159265358979):", Math.PI)
 PRINT("Math.abs(-5) (Expected 5.0):", Math.abs(-5))
 PRINT("Math.sign(-7) (Expected -1.0):", Math.sign(-7))
@@ -151,20 +151,23 @@ PRINT("Compare.between(5, 1, 10) (Expected 1.0):", Compare.between(5, 1, 10))
 PRINT("Convert.celsiusToFahrenheit(100) (Expected 212.0):", Convert.celsiusToFahrenheit(100))
 PRINT("Convert.milesToKm(1) (Expected 1.609344):", Convert.milesToKm(1))
 
-PRINT("Geometry.distance2D(0,0,3,4) (Expected 5.0):", Geometry.distance2D(0, 0, 3, 4))
-PRINT("Geometry.circleArea(2) (Expected ~12.566):", Geometry.circleArea(2))
-
-PRINT("Physics.force(10, 2) (Expected 20.0):", Physics.force(10, 2))
-PRINT("Finance.simpleInterest(1000, 5, 2) (Expected 100.0):", Finance.simpleInterest(1000, 5, 2))
-
-PRINT("Calendar.daysInMonth(2) (Expected 28.0):", Calendar.daysInMonth(2))
-PRINT("Calendar.isLeapYear(2000) (Expected 1.0):", Calendar.isLeapYear(2000))
-
 PRINT("Constants.DAY_SECONDS (Expected 86400.0):", Constants.DAY_SECONDS)
 Logging.success("Logging.success prints a tagged line")
 Assert.assertEqual(Math.square(4), 16, "Assert: Math.square(4) == 16")
 
-# 20. Importing top-level SCL classes (NOT auto-loaded — these need IMPORT)
+# 20. Top-level SCL classes (NOT auto-loaded — these need IMPORT).
+#     The domain classes below build on Math, which is already auto-loaded.
+IMPORT "SCL/Geometry.myopl"
+IMPORT "SCL/Physics.myopl"
+IMPORT "SCL/Finance.myopl"
+IMPORT "SCL/Calendar.myopl"
+PRINT("Geometry.distance2D(0,0,3,4) (Expected 5.0):", Geometry.distance2D(0, 0, 3, 4))
+PRINT("Geometry.circleArea(2) (Expected ~12.566):", Geometry.circleArea(2))
+PRINT("Physics.force(10, 2) (Expected 20.0):", Physics.force(10, 2))
+PRINT("Finance.simpleInterest(1000, 5, 2) (Expected 100.0):", Finance.simpleInterest(1000, 5, 2))
+PRINT("Calendar.daysInMonth(2) (Expected 28.0):", Calendar.daysInMonth(2))
+PRINT("Calendar.isLeapYear(2000) (Expected 1.0):", Calendar.isLeapYear(2000))
+
 IMPORT "SCL/Random.myopl"
 IMPORT "SCL/List.myopl"
 VAR rng = NEW Random(42)
