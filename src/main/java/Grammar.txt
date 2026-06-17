@@ -4,8 +4,10 @@
 
 KEYWORDS:
   VAR, CONST, FUN, INIT, NEW, RETURN, IF, THEN, ELSE, FOR, TO, STEP, WHILE,
-  BEGIN, END, CLASS, IMPORT, TRUE, FALSE
+  BEGIN, END, CLASS, IMPORT, TRUE, FALSE,
+  ENUM, ALIAS, INTERFACE, EXTENDS, IMPLEMENTS
   (Keywords are case-sensitive and uppercase. e.g. NEW works, `new` does not.)
+  Braces { } are accepted as a shorthand for BEGIN / END.
 
 COMMENTS:
   # ...           Single-line comment. Everything from # to end of line is ignored.
@@ -130,10 +132,14 @@ GRAMMAR:
                 | IF Expr THEN Expr (ELSE Expr)?      # ELSE may itself be an IF -> "else if"
                 | FOR ID = Expr TO Expr (STEP Expr)? THEN Expr
                 | WHILE Expr THEN Expr | RETURN Expr?
-                | CLASS ID BEGIN Expr* END
+                | ClassDef | EnumDef | AliasDef
                 | IMPORT STRING
                 | Comparison
-  TYPE       -> Int | Dec | Str | Chr | Bool | List | Any | ID   # ID = a class name
+  TYPE       -> BaseType (< TYPE (, TYPE)* >)?        # generics, e.g. List<Int>
+  BaseType   -> Int | Dec | Str | Chr | Bool | List | Any | ID  # ID = a class/enum/interface
+  ClassDef   -> (CLASS | INTERFACE) ID (EXTENDS ID)? (IMPLEMENTS ID (, ID)*)? BEGIN Expr* END
+  EnumDef    -> ENUM ID BEGIN ID (, ID)* END         # members, comma/space separated
+  AliasDef   -> ALIAS ID = TYPE                       # a synonym for an existing type
   Comparison -> Arithmetic ((EE | NE | LT | GT | LTE | GTE) Arithmetic)*
   Arithmetic -> Term ((PLUS | MINUS) Term)*
   Term       -> Unary ((MUL | DIV) Unary)*
@@ -281,6 +287,61 @@ IMPORT:
     IMPORT "MathHelper.myopl"
     PRINT(MathHelper.add(3, 4))          # 7.0
     PRINT(MathHelper.PI)                 # 3.14159
+
+=========================================
+      CUSTOM TYPES
+=========================================
+
+Beyond classes, MyOPL has four more ways to define and shape types.
+
+TYPE ALIASES:
+  ALIAS Name = ExistingType
+    - Registers Name as another name for an existing type. The two are fully
+      interchangeable — an alias is a nickname, not a new type.
+        ALIAS Money = Dec
+        Money price = 9.99            # typeOf(price) is "Money"; behaves as a Dec
+        FUN charge(Money amount) -> amount
+
+ENUMS:
+  ENUM Name BEGIN A, B, C END         (or  ENUM Name { A, B, C })
+    - Defines a fixed set of named values. Each member is reached as Name.MEMBER,
+      prints as its own name, compares by value, and reports typeOf = the enum name.
+        ENUM Color BEGIN RED, GREEN, BLUE END
+        Color fav = Color.GREEN
+        PRINT(fav)                    # GREEN
+        IF fav == Color.GREEN THEN PRINT("go")
+
+INHERITANCE (EXTENDS):
+  CLASS Sub EXTENDS Super BEGIN ... END
+    - Sub inherits Super's fields and methods; any it redefines override the parent.
+    - A Sub instance satisfies a parameter or variable typed as Super (subtyping).
+        CLASS Animal BEGIN
+            FUN speak() -> "..."
+        END
+        CLASS Dog EXTENDS Animal BEGIN
+            FUN speak() -> "Woof"     # overrides Animal.speak
+        END
+        FUN greet(Animal a) -> a.speak()
+        PRINT(greet(NEW Dog()))       # Woof   (a Dog is an Animal)
+
+INTERFACES (IMPLEMENTS):
+  INTERFACE Name BEGIN ... END        - declares a type (its methods are defaults)
+  CLASS C IMPLEMENTS A, B BEGIN ... END
+    - C inherits each interface's default members and becomes a subtype of each,
+      so it satisfies an A or B parameter. A class may EXTENDS one class and
+      IMPLEMENTS any number of interfaces.
+        INTERFACE Named BEGIN FUN name() -> "thing" END
+        CLASS Robot IMPLEMENTS Named BEGIN FUN name() -> "R2" END
+        FUN introduce(Named n) -> "I am " + n.name()
+
+GENERICS:
+  A type may carry type arguments in angle brackets, e.g. List<Int>, Map<Str, Int>.
+    - For matching, the arguments are erased: List<Int> matches like List.
+    - For a built-in list literal declared List<T>, every element is checked against
+      T, so  List<Int> xs = [1, "two"]  raises a Type error.
+        List<Int> scores = [10, 20, 30]
+        FUN total(List<Int> xs) -> LEN(xs)
+    - Use Any for deliberately mixed contents:  List<Any> mixed = [1, "two", 'x'].
 
 =========================================
       STANDARD CLASS LIBRARY (SCL)

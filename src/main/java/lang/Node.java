@@ -5,7 +5,8 @@ public sealed interface Node permits
         NumberNode, StringNode, CharNode, BinOpNode, UnaryOpNode, VarAccessNode,
         VarAssignNode, FunDefNode, CallNode, ReturnNode, IfNode, ForNode,
         WhileNode, BlockNode, ListNode, BuiltInFunctionNode,
-        ClassDefNode, ImportNode, MemberAccessNode, NewNode {
+        ClassDefNode, ImportNode, MemberAccessNode, NewNode,
+        EnumDefNode, AliasNode {
     Position posStart();
     Position posEnd();
 }
@@ -96,8 +97,32 @@ record BuiltInFunctionNode(String name) implements Node {
  * CLASS ClassName BEGIN ... END
  * Defines a named class scope. Functions and variables declared inside
  * become members accessible via dot notation: ClassName.member
+ *
+ * A class may extend one superclass and implement any number of interfaces:
+ *   CLASS Dog EXTENDS Animal IMPLEMENTS Named, Comparable BEGIN ... END
+ * superToken is null when there is no EXTENDS clause; interfaceTokens is empty
+ * when there is no IMPLEMENTS clause. isInterface marks an INTERFACE definition.
  */
-record ClassDefNode(Token nameToken, Node body, Position posStart, Position posEnd) implements Node {}
+record ClassDefNode(Token nameToken, Token superToken, java.util.List<Token> interfaceTokens,
+                    boolean isInterface, Node body, Position posStart, Position posEnd) implements Node {}
+
+/**
+ * ENUM Name BEGIN A, B, C END   (or  ENUM Name { A, B, C })
+ * Defines an enumeration type. Each member becomes a distinct EnumValue,
+ * accessible as Name.MEMBER, that prints as its own name and reports its type
+ * via typeOf as the enum's name.
+ */
+record EnumDefNode(Token nameToken, List<Token> memberTokens, Position posStart, Position posEnd) implements Node {}
+
+/**
+ * ALIAS Name = ExistingType
+ * Registers Name as another name for an existing type (e.g. ALIAS Money = Dec).
+ * The two names are fully interchangeable in declarations and parameters.
+ */
+record AliasNode(Token nameToken, Token targetToken) implements Node {
+    public Position posStart() { return nameToken.posStart();   }
+    public Position posEnd()   { return targetToken.posEnd();   }
+}
 
 /**
  * IMPORT "path/to/file.myopl"

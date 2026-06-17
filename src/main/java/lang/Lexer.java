@@ -8,7 +8,8 @@ public class Lexer {
     private static final List<String> KEYWORDS = List.of(
         "VAR", "CONST", "FUN", "INIT", "NEW", "RETURN", "IF", "THEN", "ELSE",
         "FOR", "TO", "STEP", "WHILE", "BEGIN", "END",
-        "CLASS", "IMPORT", "TRUE", "FALSE"
+        "CLASS", "IMPORT", "TRUE", "FALSE",
+        "ENUM", "ALIAS", "INTERFACE", "EXTENDS", "IMPLEMENTS"
     );
 
     public Lexer(String fn, String text) {
@@ -55,6 +56,10 @@ public class Lexer {
             else if (currentChar == ')') { tokens.add(new Token("RPAREN", pos.copy(), pos.copy())); advance(); }
             else if (currentChar == '[') { tokens.add(new Token("LSQUARE", pos.copy(), pos.copy())); advance(); }
             else if (currentChar == ']') { tokens.add(new Token("RSQUARE", pos.copy(), pos.copy())); advance(); }
+            // Braces are accepted as aliases for BEGIN / END, so blocks and enums
+            // may be written  { ... }  in a more Java-like style.
+            else if (currentChar == '{') { tokens.add(new Token("KEYWORD", "BEGIN", pos.copy(), pos.copy())); advance(); }
+            else if (currentChar == '}') { tokens.add(new Token("KEYWORD", "END", pos.copy(), pos.copy())); advance(); }
             else if (currentChar == ',') { tokens.add(new Token("COMMA", pos.copy(), pos.copy())); advance(); }
             else if (currentChar == '!') {
                 Position start = pos.copy(); advance();

@@ -10,6 +10,11 @@ public class Interpreter {
      *  Powers typeOf() and the typed-declaration checks. Saved/restored alongside
      *  `symbols` whenever a new scope is entered (classes, calls, NEW). */
     private Map<String, String> varTypes = new HashMap<>();
+    /** Type aliases: an alias name -> the type it stands for (ALIAS Money = Dec). */
+    private final Map<String, String> typeAliases = new HashMap<>();
+    /** For each class/interface, the set of all its ancestors (superclasses and
+     *  implemented interfaces, transitively) — used for subtype matching. */
+    private final Map<String, Set<String>> ancestors = new HashMap<>();
     private final Scanner stdin = new Scanner(System.in);
     private String baseDir = ".";
 
@@ -74,6 +79,10 @@ public class Interpreter {
         return pub;
     }
 
+    /** Type metadata exported to an importing interpreter (aliases + ancestor sets). */
+    public Map<String, String> getPublicAliases()      { return typeAliases; }
+    public Map<String, Set<String>> getPublicAncestors() { return ancestors; }
+
     public Object visit(Node node) {
         return switch (node) {
             case NumberNode n -> n.token().value();
@@ -135,15 +144,29 @@ public class Interpreter {
             case BuiltInFunctionNode bi -> bi;
 
             case ClassDefNode cd -> {
+                String className = (String) cd.nameToken().value();
+
+                // Collect the direct parents (one superclass, any interfaces).
+                List<String> parents = new ArrayList<>();
+                if (cd.superToken() != null) parents.add((String) cd.superToken().value());
+                for (Token it : cd.interfaceTokens()) parents.add((String) it.value());
+
                 Map<String, Object> saved = symbols;
                 Set<String> savedConsts = constants;
                 Map<String, String> savedTypes = varTypes;
                 symbols = new HashMap<>();
                 constants = new HashSet<>();
                 varTypes = new HashMap<>();
+                // Inherit members from each parent (defined earlier in the outer scope);
+                // the subclass body below overrides any it redefines.
+                for (String pname : parents) {
+                    if (saved.get(pname) instanceof Map<?, ?> pm) {
+                        for (Map.Entry<?, ?> e : pm.entrySet())
+                            if (!"__class__".equals(e.getKey())) symbols.put((String) e.getKey(), e.getValue());
+                    }
+                }
                 visit(cd.body());
                 Map<String, Object> classScope = new HashMap<>(symbols);
-                String className = (String) cd.nameToken().value();
                 // Tag the class scope with its name so instances copied from it report
                 // their class via typeOf() and satisfy custom-type declarations.
                 classScope.put("__class__", className);
@@ -152,6 +175,34 @@ public class Interpreter {
                 varTypes = savedTypes;
                 symbols.put(className, classScope);
                 varTypes.put(className, "Class");
+
+                // Record this type's full ancestor set for subtype matching.
+                Set<String> anc = new HashSet<>();
+                for (String pname : parents) {
+                    anc.add(pname);
+                    Set<String> pa = ancestors.get(pname);
+                    if (pa != null) anc.addAll(pa);
+                }
+                ancestors.put(className, anc);
+                yield null;
+            }
+
+            case EnumDefNode ed -> {
+                String enumName = (String) ed.nameToken().value();
+                Map<String, Object> enumScope = new HashMap<>();
+                enumScope.put("__class__", enumName);
+                List<Token> members = ed.memberTokens();
+                for (int i = 0; i < members.size(); i++) {
+                    String m = (String) members.get(i).value();
+                    enumScope.put(m, new EnumValue(enumName, m, i));
+                }
+                symbols.put(enumName, enumScope);
+                varTypes.put(enumName, "Enum");
+                yield null;
+            }
+
+            case AliasNode al -> {
+                typeAliases.put((String) al.nameToken().value(), (String) al.targetToken().value());
                 yield null;
             }
 
@@ -168,6 +219,8 @@ public class Interpreter {
                     Node ast = new Parser(toks).parse();
                     sub.visit(ast);
                     symbols.putAll(sub.getPublicSymbols());
+                    typeAliases.putAll(sub.getPublicAliases());     // carry over type metadata
+                    ancestors.putAll(sub.getPublicAncestors());
                 } catch (Exception e) {
                     throw new RuntimeException("IMPORT failed for '" + pathStr + "': " + e.getMessage());
                 }
@@ -392,6 +445,14 @@ public class Interpreter {
             boolean want  = b.opToken().type().equals("EE") ? equal : !equal;
             return want ? 1.0 : 0.0;
         }
+        // Equality on enum values and other non-numeric values (e.g. objects) compares
+        // by value, so Color.RED == Color.RED is true and never tries numeric coercion.
+        if ((b.opToken().type().equals("EE") || b.opToken().type().equals("NE"))
+                && (!(left instanceof Number) || !(right instanceof Number))) {
+            boolean equal = Objects.equals(left, right);
+            boolean want  = b.opToken().type().equals("EE") ? equal : !equal;
+            return want ? 1.0 : 0.0;
+        }
         double l = ((Number) left).doubleValue();
         double r = ((Number) right).doubleValue();
         return switch (b.opToken().type()) {
@@ -421,18 +482,29 @@ public class Interpreter {
         if (!typeMatches(declared, val))
             throw new RuntimeException("Type error: cannot assign " + typeNameOfValue(val)
                     + " value to '" + name + "' (declared as " + declared + ")");
+        // For a generic list type like List<Int>, also check each element.
+        if (resolveAlias(stripGenerics(declared)).equals("List") && val instanceof List<?> list) {
+            String arg = firstTypeArg(declared);
+            if (arg != null)
+                for (Object el : list)
+                    if (!typeMatches(arg, el))
+                        throw new RuntimeException("Type error: list element " + typeNameOfValue(el)
+                                + " does not match element type " + arg + " of '" + name + "'");
+        }
     }
 
     /**
-     * Does a runtime value satisfy a declared type name? Because MyOPL stores
-     * booleans as numbers and chars as one-character strings, the built-in checks
-     * are by broad category (number / text / list / object). `Any` accepts anything;
-     * an unknown name is treated as a class type and matched against the value's
-     * own class tag.
+     * Does a runtime value satisfy a declared type name? Aliases are resolved and
+     * generic parameters erased first (List<Int> matches like List). Because MyOPL
+     * stores booleans as numbers and chars as one-character strings, the built-in
+     * checks are by broad category (number / text / list / object). `Any` accepts
+     * anything; any other name is a class/enum/interface type, matched against the
+     * value's own class tag and its ancestors (so a subclass satisfies a supertype).
      */
     private boolean typeMatches(String type, Object v) {
         if (type == null) return true;
-        return switch (type) {
+        String base = resolveAlias(stripGenerics(type));
+        return switch (base) {
             case "Any", "Obj", "Object"            -> true;
             case "Int", "Dec", "Num", "Number", "Bool" -> v instanceof Double || v instanceof Boolean;
             case "Str", "String"                   -> v instanceof String;
@@ -440,13 +512,43 @@ public class Interpreter {
             case "List"                            -> v instanceof List;
             case "Fun"                             -> v instanceof FunDefNode || v instanceof BoundMethod || v instanceof BuiltInFunctionNode;
             default -> {
+                if (v instanceof EnumValue ev) yield ev.type().equals(base) || isAncestor(base, ev.type());
                 if (v instanceof Map<?, ?> m) {
                     Object tag = m.get("__class__");
-                    yield tag == null || tag.equals(type);   // class instance of the right class
+                    if (tag == null) yield true;            // untagged object — accept
+                    yield tag.equals(base) || isAncestor(base, tag.toString());
                 }
                 yield false;
             }
         };
+    }
+
+    /** True if `concrete` has `wanted` among its (transitive) ancestors. */
+    private boolean isAncestor(String wanted, String concrete) {
+        Set<String> anc = ancestors.get(concrete);
+        return anc != null && anc.contains(wanted);
+    }
+
+    /** Follow a chain of type aliases to the underlying type (generics erased). */
+    private String resolveAlias(String type) {
+        String t = type; int guard = 0;
+        while (typeAliases.containsKey(t) && guard++ < 64) t = stripGenerics(typeAliases.get(t));
+        return t;
+    }
+
+    /** "List<Int>" -> "List"; a plain type is returned unchanged. */
+    private static String stripGenerics(String type) {
+        int lt = type.indexOf('<');
+        return lt < 0 ? type : type.substring(0, lt);
+    }
+
+    /** The first type argument of a generic type, or null if there is none. */
+    private static String firstTypeArg(String type) {
+        int lt = type.indexOf('<'), gt = type.lastIndexOf('>');
+        if (lt < 0 || gt <= lt) return null;
+        String inner = type.substring(lt + 1, gt).trim();
+        int comma = inner.indexOf(',');
+        return (comma < 0 ? inner : inner.substring(0, comma)).trim();
     }
 
     /**
@@ -477,6 +579,7 @@ public class Interpreter {
     /** Best-effort type name from a runtime value alone. */
     private String typeNameOfValue(Object v) {
         if (v == null) return "Null";
+        if (v instanceof EnumValue ev) return ev.type();
         if (v instanceof Double d)
             return (d == Math.floor(d) && !d.isInfinite() && !d.isNaN()) ? "Int" : "Dec";
         if (v instanceof Boolean) return "Bool";

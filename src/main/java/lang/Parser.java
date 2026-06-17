@@ -34,16 +34,17 @@ public class Parser {
             if (val.equals("FOR"))    return forExpr();
             if (val.equals("WHILE"))  return whileExpr();
             if (val.equals("RETURN")) { Position s = current.posStart(); advance(); Node v = expr(); return new ReturnNode(v, s, v != null ? v.posEnd() : s); }
-            if (val.equals("CLASS"))  return classDefExpr();
-            if (val.equals("IMPORT")) return importExpr();
+            if (val.equals("CLASS"))     return classDefExpr(false);
+            if (val.equals("INTERFACE")) return classDefExpr(true);
+            if (val.equals("ENUM"))      return enumDefExpr();
+            if (val.equals("ALIAS"))     return aliasExpr();
+            if (val.equals("IMPORT"))    return importExpr();
         }
-        // Typed declaration:  Type name = expr   (two identifiers followed by '=').
-        // Two identifiers in a row only ever mean a typed declaration, and the
-        // trailing '=' separates it cleanly from a bare identifier expression.
-        if (current != null && current.type().equals("IDENTIFIER")
-                && peek(1) != null && peek(1).type().equals("IDENTIFIER")
-                && peek(2) != null && peek(2).type().equals("EQ")) {
-            Token typeTok = current; advance();   // consume Type
+        // Typed declaration:  Type name = expr   (a type, then a name, then '=').
+        // The type may carry generics, e.g.  List<Int> xs = [1, 2].  The trailing
+        // '=' separates it cleanly from a bare comparison expression like  a < b.
+        if (looksLikeTypedDecl()) {
+            Token typeTok = parseTypeToken();     // consume Type (and any <...>)
             Token nameTok = current; advance();   // consume name
             advance();                            // consume '='
             return new VarAssignNode(nameTok, expr(), false, typeTok);
@@ -64,13 +65,56 @@ public class Parser {
     private Node varDecl(boolean isConst) {
         advance();                               // consume VAR / CONST
         Token typeTok = null;
-        if (current != null && current.type().equals("IDENTIFIER")
-                && peek(1) != null && peek(1).type().equals("IDENTIFIER")) {
-            typeTok = current; advance();         // consume explicit type name
-        }
+        if (looksLikeTypedDecl()) typeTok = parseTypeToken();   // optional explicit type
         Token name = current; advance();          // consume variable name
         if (current != null && current.type().equals("EQ")) advance();   // consume '='
         return new VarAssignNode(name, expr(), isConst, typeTok);
+    }
+
+    /** True if the tokens from `current` form a typed declaration: Type [<...>] name = . */
+    private boolean looksLikeTypedDecl() {
+        if (current == null || !current.type().equals("IDENTIFIER")) return false;
+        int k = 1;                                // offset past the leading type identifier
+        if (peek(k) != null && peek(k).type().equals("LT")) {   // skip a balanced <...> generic
+            int depth = 0; boolean closed = false;
+            while (peek(k) != null) {
+                String t = peek(k).type();
+                if (t.equals("LT")) { depth++; k++; }
+                else if (t.equals("GT")) { depth--; k++; if (depth == 0) { closed = true; break; } }
+                else if (t.equals("IDENTIFIER") || t.equals("COMMA")) { k++; }
+                else return false;
+            }
+            if (!closed) return false;
+        }
+        return peek(k) != null && peek(k).type().equals("IDENTIFIER")
+            && peek(k + 1) != null && peek(k + 1).type().equals("EQ");
+    }
+
+    /** Consume a type name, including an optional generic part, into one token
+     *  whose value is the full text (e.g. "List<Int>", "Map<Str, Int>"). */
+    private Token parseTypeToken() {
+        StringBuilder sb = new StringBuilder(String.valueOf(current.value()));
+        Position startP = current.posStart();
+        Position endP   = current.posEnd();
+        advance();                                // consume the base type name
+        if (current != null && current.type().equals("LT")) {
+            sb.append("<"); endP = current.posEnd(); advance();
+            int depth = 1;
+            while (current != null && depth > 0) {
+                String t = current.type();
+                if (t.equals("LT")) { depth++; sb.append("<"); }
+                else if (t.equals("GT")) { depth--; sb.append(">"); }
+                else if (t.equals("IDENTIFIER")) sb.append(String.valueOf(current.value()));
+                else if (t.equals("COMMA")) sb.append(", ");
+                endP = current.posEnd();
+                advance();
+            }
+        }
+        return new Token("IDENTIFIER", sb.toString(), startP, endP);
+    }
+
+    private boolean isKw(String kw) {
+        return current != null && current.type().equals("KEYWORD") && kw.equals(current.value());
     }
 
     /**
@@ -86,13 +130,12 @@ public class Parser {
     }
 
     private void parseOneParam(List<Token> names, List<Token> types) {
-        Token typeTok = current;
-        if (typeTok == null || !typeTok.type().equals("IDENTIFIER"))
-            throw new RuntimeException("Expected a parameter type name");
-        advance();
         if (current == null || !current.type().equals("IDENTIFIER"))
-            throw new RuntimeException("Parameter '" + typeTok.value()
-                + "' must be written as 'Type name' (a type then a name), e.g. FUN f(Int x)");
+            throw new RuntimeException("Expected a parameter type name");
+        Token typeTok = parseTypeToken();          // type, with optional generics
+        if (current == null || !current.type().equals("IDENTIFIER"))
+            throw new RuntimeException("Parameter type '" + typeTok.value()
+                + "' must be followed by a name, e.g. FUN f(Int x)");
         types.add(typeTok);
         names.add(current);
         advance();
@@ -131,19 +174,61 @@ public class Parser {
      *     VAR field = value
      * END
      */
-    private Node classDefExpr() {
-        advance();                           // consume CLASS
+    private Node classDefExpr(boolean isInterface) {
+        advance();                           // consume CLASS / INTERFACE
         Token name = current; advance();     // consume ClassName
         Position start = name.posStart();
-        if (current != null && current.value().equals("BEGIN")) advance(); // consume BEGIN
+
+        // Optional  EXTENDS Super  and  IMPLEMENTS Iface (, Iface)*  clauses.
+        Token superTok = null;
+        List<Token> interfaces = new ArrayList<>();
+        if (isKw("EXTENDS")) { advance(); superTok = current; advance(); }
+        if (isKw("IMPLEMENTS")) {
+            advance();
+            if (current != null && current.type().equals("IDENTIFIER")) { interfaces.add(current); advance(); }
+            while (current != null && current.type().equals("COMMA")) { advance(); interfaces.add(current); advance(); }
+        }
+
+        if (isKw("BEGIN")) advance();        // consume BEGIN
         List<Node> stmts = new ArrayList<>();
-        while (current != null && !current.value().equals("END")) {
+        while (current != null && !isKw("END")) {
             Node s = expr();
             if (s != null) stmts.add(s);
         }
         Position end = current != null ? current.posEnd() : name.posEnd();
         if (current != null) advance();      // consume END
-        return new ClassDefNode(name, new BlockNode(stmts, start, end), start, end);
+        return new ClassDefNode(name, superTok, interfaces, isInterface,
+                new BlockNode(stmts, start, end), start, end);
+    }
+
+    /**
+     * ENUM Name BEGIN A, B, C END   — define an enumeration. Member names are
+     * separated by commas and/or whitespace.
+     */
+    private Node enumDefExpr() {
+        advance();                           // consume ENUM
+        Token name = current; advance();     // consume EnumName
+        Position start = name.posStart();
+        if (isKw("BEGIN")) advance();        // consume BEGIN / {
+        List<Token> members = new ArrayList<>();
+        while (current != null && !isKw("END")) {
+            if (current.type().equals("IDENTIFIER")) { members.add(current); advance(); }
+            else advance();                  // skip commas (and any stray tokens)
+        }
+        Position end = current != null ? current.posEnd() : name.posEnd();
+        if (current != null) advance();      // consume END / }
+        return new EnumDefNode(name, members, start, end);
+    }
+
+    /**
+     * ALIAS Name = ExistingType   — register Name as a synonym for an existing type.
+     */
+    private Node aliasExpr() {
+        advance();                           // consume ALIAS
+        Token name = current; advance();     // consume the alias name
+        if (current != null && current.type().equals("EQ")) advance();   // consume '='
+        Token target = parseTypeToken();     // the existing type (generics allowed)
+        return new AliasNode(name, target);
     }
 
     /**

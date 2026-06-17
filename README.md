@@ -12,6 +12,12 @@ A custom programming language built from scratch in Java. MyOpl ships with a han
   - Each built-in type has an auto-loaded companion class (`Int`, `Dec`, `Str`, `Chr`, `Bool`) of useful helpers
 - **Functions** with `FUN name(Type arg) -> body` or a `BEGIN ... END` block with `RETURN`
 - **Classes** with `CLASS Name BEGIN ... END`, `INIT` constructors, and `NEW` instances
+- **Custom types**:
+  - **Type aliases**: `ALIAS Money = Dec`
+  - **Enums**: `ENUM Color BEGIN RED, GREEN, BLUE END` (or `{ RED, GREEN }`)
+  - **Inheritance**: `CLASS Dog EXTENDS Animal BEGIN … END` — subclasses override methods and satisfy a supertype parameter
+  - **Interfaces**: `INTERFACE Named BEGIN … END` + `CLASS Robot IMPLEMENTS Named`
+  - **Generics**: `List<Int> xs = [1, 2, 3]` — element types are checked; use `Any` for mixed contents
 - **Modules**: `IMPORT "path/to/file.myopl"` merges another file's symbols into the current scope
 - **Control flow**: `IF / THEN / ELSE`, `FOR x = a TO b STEP s THEN`, `WHILE cond THEN`
 - **Booleans**: `TRUE` / `FALSE` keywords (typed `Bool`)

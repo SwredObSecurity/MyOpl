@@ -225,3 +225,47 @@ PRINT("Bool.toYesNo(T)   (Expected yes):", Bool.toYesNo(TRUE))
 # Bool ok   = Bool.input("Continue (yes/no)? ")
 # Chr  pick = Chr.input("Pick a letter: ")
 # PRINT("You entered:", who, age, temp, ok, pick)
+
+# 24. CUSTOM TYPES — aliases, enums, inheritance, interfaces and generics.
+
+# Type alias: Money is another name for Dec
+ALIAS Money = Dec
+Money wallet = 19.99
+PRINT("Alias typeOf (Expected Money):", typeOf(wallet))
+
+# Enum: a fixed set of named values
+ENUM Color BEGIN RED, GREEN, BLUE END
+Color fav = Color.GREEN
+PRINT("Enum value (Expected GREEN):", fav)
+PRINT("Enum typeOf (Expected Color):", typeOf(fav))
+PRINT("Enum equality (Expected 1.0):", Color.RED == Color.RED)
+
+# Inheritance: Dog EXTENDS Animal, overrides speak(), inherits describe()
+CLASS Animal BEGIN
+    VAR legs = 4
+    FUN speak() -> "..."
+    FUN describe() -> "an animal with " + legs + " legs"
+END
+CLASS Dog EXTENDS Animal BEGIN
+    FUN speak() -> "Woof"
+END
+VAR dog = NEW Dog()
+PRINT("Override (Expected Woof):", dog.speak())
+PRINT("Inherited (Expected an animal with 4.0 legs):", dog.describe())
+FUN greet(Animal a) -> a.speak()             # a Dog satisfies an Animal parameter
+PRINT("Subtype arg (Expected Woof):", greet(dog))
+
+# Interface: Robot IMPLEMENTS Named
+INTERFACE Named BEGIN
+    FUN name() -> "thing"
+END
+CLASS Robot IMPLEMENTS Named BEGIN
+    FUN name() -> "R2"
+END
+FUN introduce(Named n) -> "I am " + n.name()
+PRINT("Interface (Expected I am R2):", introduce(NEW Robot()))
+
+# Generics: a list whose elements are checked against the type argument
+List<Int> scores = [10, 20, 30]
+PRINT("Generic list typeOf (Expected List<Int>):", typeOf(scores))
+PRINT("Generic list LEN (Expected 3.0):", LEN(scores))
