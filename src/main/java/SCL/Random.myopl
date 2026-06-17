@@ -18,14 +18,14 @@ CLASS Random BEGIN
    VAR c    = 74
    VAR m    = 65537
 
-   INIT(s) BEGIN
+   INIT(Int s) BEGIN
       VAR seed = s
    END
 
    # --- pure helpers (they read fields but never change the seed) ---
 
    # x mod m, for x >= 0. x is small here (< a*m), so repeated subtraction is fine.
-   FUN modulo(x) BEGIN
+   FUN modulo(Dec x) BEGIN
       VAR r = x
       WHILE r >= m THEN BEGIN
          VAR r = r - m
@@ -34,7 +34,7 @@ CLASS Random BEGIN
    END
 
    # floor of a non-negative number (largest whole number <= x)
-   FUN floor(x) BEGIN
+   FUN floor(Dec x) BEGIN
       VAR i = 0
       WHILE i + 1 <= x THEN BEGIN
          VAR i = i + 1
@@ -43,7 +43,7 @@ CLASS Random BEGIN
    END
 
    # the next seed value after s (does NOT store it — pure)
-   FUN stepFrom(s) BEGIN
+   FUN stepFrom(Dec s) BEGIN
       RETURN modulo(a * s + c)
    END
 
@@ -56,13 +56,13 @@ CLASS Random BEGIN
    END
 
    # a whole number in [0, bound)
-   FUN nextInt(bound) BEGIN
+   FUN nextInt(Int bound) BEGIN
       VAR seed = stepFrom(seed)
       RETURN floor((seed / m) * bound)
    END
 
    # a whole number in [lo, hi)
-   FUN range(lo, hi) BEGIN
+   FUN range(Int lo, Int hi) BEGIN
       VAR seed = stepFrom(seed)
       RETURN lo + floor((seed / m) * (hi - lo))
    END
@@ -77,7 +77,7 @@ CLASS Random BEGIN
    END
 
    # roll an n-sided die: a whole number in [1, sides]
-   FUN dice(sides) BEGIN
+   FUN dice(Int sides) BEGIN
       VAR seed = stepFrom(seed)
       RETURN 1 + floor((seed / m) * sides)
    END

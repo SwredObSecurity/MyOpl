@@ -1,0 +1,50 @@
+#*
+   Chr — the companion class for the Chr type (a single character).
+
+   Auto-loaded, so it is ready without IMPORT. The Chr TYPE is a built-in:
+   declare with  Chr c = 'a'  (see Grammar.txt). A Chr is stored as a
+   one-character string, so it concatenates and compares with strings.
+
+       Chr c = 'e'
+       PRINT(Chr.isVowel(c))      # 1.0 (TRUE)
+       PRINT(Chr.repeat('-', 5))  # -----
+*#
+CLASS Chr BEGIN
+
+   # show prompt, read one character from the user (the first character typed)
+   FUN input(Str prompt) -> INPUT_CHR(prompt)
+
+   # TRUE if two characters are equal
+   FUN equals(Chr a, Chr b) -> IF a == b THEN TRUE ELSE FALSE
+
+   # TRUE if c is a lowercase English vowel
+   FUN isVowel(Chr c) BEGIN
+      IF c == 'a' THEN RETURN TRUE
+      IF c == 'e' THEN RETURN TRUE
+      IF c == 'i' THEN RETURN TRUE
+      IF c == 'o' THEN RETURN TRUE
+      IF c == 'u' THEN RETURN TRUE
+      RETURN FALSE
+   END
+
+   # TRUE if c is a digit character '0'..'9'
+   FUN isDigit(Chr c) BEGIN
+      IF c == '0' THEN RETURN TRUE
+      IF c == '1' THEN RETURN TRUE
+      IF c == '2' THEN RETURN TRUE
+      IF c == '3' THEN RETURN TRUE
+      IF c == '4' THEN RETURN TRUE
+      IF c == '5' THEN RETURN TRUE
+      IF c == '6' THEN RETURN TRUE
+      IF c == '7' THEN RETURN TRUE
+      IF c == '8' THEN RETURN TRUE
+      IF c == '9' THEN RETURN TRUE
+      RETURN FALSE
+   END
+
+   # the character repeated `times` times (returns a Str)
+   FUN repeat(Chr c, Int times) -> Str.repeat(c, times)
+
+   # text form
+   FUN toString(Chr c) -> "" + c
+END

@@ -1,6 +1,6 @@
 CLASS MathHelper BEGIN
-    FUN add(a, b) -> a + b
-    FUN multiply(a, b) -> a * b
-    FUN square(n) -> n * n
+    FUN add(Dec a, Dec b) -> a + b
+    FUN multiply(Dec a, Dec b) -> a * b
+    FUN square(Dec n) -> n * n
     VAR PI = 3.14159
 END

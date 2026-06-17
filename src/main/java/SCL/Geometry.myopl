@@ -8,40 +8,40 @@
 CLASS Geometry BEGIN
 
    # --- circle ---
-   FUN circleArea(r)          -> Math.PI * r * r
-   FUN circleCircumference(r) -> 2 * Math.PI * r
-   FUN circleDiameter(r)      -> 2 * r
+   FUN circleArea(Dec r)          -> Math.PI * r * r
+   FUN circleCircumference(Dec r) -> 2 * Math.PI * r
+   FUN circleDiameter(Dec r)      -> 2 * r
 
    # --- sphere ---
-   FUN sphereVolume(r)      -> 4 / 3 * Math.PI * r * r * r
-   FUN sphereSurfaceArea(r) -> 4 * Math.PI * r * r
+   FUN sphereVolume(Dec r)      -> 4 / 3 * Math.PI * r * r * r
+   FUN sphereSurfaceArea(Dec r) -> 4 * Math.PI * r * r
 
    # --- rectangle ---
-   FUN rectangleArea(w, h)      -> w * h
-   FUN rectanglePerimeter(w, h) -> 2 * (w + h)
-   FUN rectangleDiagonal(w, h)  -> Math.sqrt(w * w + h * h)
+   FUN rectangleArea(Dec w, Dec h)      -> w * h
+   FUN rectanglePerimeter(Dec w, Dec h) -> 2 * (w + h)
+   FUN rectangleDiagonal(Dec w, Dec h)  -> Math.sqrt(w * w + h * h)
 
    # --- square ---
-   FUN squareArea(side)      -> side * side
-   FUN squarePerimeter(side) -> 4 * side
-   FUN squareDiagonal(side)  -> side * Math.SQRT2
+   FUN squareArea(Dec side)      -> side * side
+   FUN squarePerimeter(Dec side) -> 4 * side
+   FUN squareDiagonal(Dec side)  -> side * Math.SQRT2
 
    # --- triangle ---
-   FUN triangleArea(base, height) -> base * height / 2
-   FUN trianglePerimeter(a, b, c) -> a + b + c
+   FUN triangleArea(Dec base, Dec height) -> base * height / 2
+   FUN trianglePerimeter(Dec a, Dec b, Dec c) -> a + b + c
 
    # area from three side lengths (Heron's formula)
-   FUN triangleAreaHeron(a, b, c) BEGIN
+   FUN triangleAreaHeron(Dec a, Dec b, Dec c) BEGIN
       VAR s = (a + b + c) / 2
       RETURN Math.sqrt(s * (s - a) * (s - b) * (s - c))
    END
 
    # --- cube ---
-   FUN cubeVolume(s)      -> s * s * s
-   FUN cubeSurfaceArea(s) -> 6 * s * s
+   FUN cubeVolume(Dec s)      -> s * s * s
+   FUN cubeSurfaceArea(Dec s) -> 6 * s * s
 
    # --- distance ---
-   FUN distance2D(x1, y1, x2, y2)      -> Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
-   FUN distanceSquared(x1, y1, x2, y2) -> (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)
-   FUN pythagorean(a, b)               -> Math.sqrt(a * a + b * b)
+   FUN distance2D(Dec x1, Dec y1, Dec x2, Dec y2)      -> Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
+   FUN distanceSquared(Dec x1, Dec y1, Dec x2, Dec y2) -> (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)
+   FUN pythagorean(Dec a, Dec b)               -> Math.sqrt(a * a + b * b)
 END

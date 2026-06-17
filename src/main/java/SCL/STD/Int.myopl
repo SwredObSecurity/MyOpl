@@ -1,0 +1,55 @@
+#*
+   Int — the companion class for the Int type (whole numbers).
+
+   Auto-loaded, so it is ready without IMPORT. Most helpers delegate to Math.
+   The Int TYPE is a built-in: declare with  Int n = 5  (see Grammar.txt).
+
+       Int n = -7
+       PRINT(Int.abs(n))          # 7.0
+       PRINT(Int.isEven(4))       # 1.0  (TRUE)
+       PRINT(Int.toString(42))    # "42.0"
+*#
+CLASS Int BEGIN
+
+   CONST ZERO = 0
+   CONST ONE  = 1
+
+   # show prompt, read a whole number from the user (bad input -> 0)
+   FUN input(Str prompt) -> INPUT_INT(prompt)
+
+   # nearest whole number toward zero  (3.9 -> 3, -3.9 -> -3)
+   FUN of(Dec n) -> Math.trunc(n)
+
+   # absolute value
+   FUN abs(Int n) -> Math.abs(n)
+
+   # -1, 0 or 1 depending on the sign
+   FUN sign(Int n) -> Math.sign(n)
+
+   # smaller / larger of two
+   FUN min(Int a, Int b) -> Math.min(a, b)
+   FUN max(Int a, Int b) -> Math.max(a, b)
+
+   # keep n inside [lo, hi]
+   FUN clamp(Int n, Int lo, Int hi) -> Math.clamp(n, lo, hi)
+
+   # TRUE if even / odd
+   FUN isEven(Int n) -> Math.isEven(n)
+   FUN isOdd(Int n)  -> Math.isOdd(n)
+
+   # base raised to a whole exponent
+   FUN pow(Int base, Int exp) -> Math.pow(base, exp)
+
+   # a mod b
+   FUN mod(Int a, Int b) -> Math.mod(a, b)
+
+   # n!  (factorial)
+   FUN factorial(Int n) -> Math.factorial(n)
+
+   # greatest common divisor / least common multiple
+   FUN gcd(Int a, Int b) -> Math.gcd(a, b)
+   FUN lcm(Int a, Int b) -> Math.lcm(a, b)
+
+   # text form
+   FUN toString(Int n) -> "" + n
+END

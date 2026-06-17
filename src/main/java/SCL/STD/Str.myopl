@@ -1,0 +1,53 @@
+#*
+   Str — the companion class for the Str type (text).
+
+   Auto-loaded, so it is ready without IMPORT. The Str TYPE is a built-in:
+   declare with  Str s = "hello"  (see Grammar.txt).
+
+   MyOPL has no character-indexing built-ins, so Str offers the operations that
+   can be built on top of + and == : emptiness, equality, joining and repetition.
+
+       Str s = "ab"
+       PRINT(Str.repeat(s, 3))     # ababab
+       PRINT(Str.isEmpty(""))      # 1.0 (TRUE)
+       PRINT(Str.quote(s))         # "ab"
+*#
+CLASS Str BEGIN
+
+   CONST EMPTY = ""
+
+   # show prompt, read a line of text from the user
+   FUN input(Str prompt) -> INPUT_STR(prompt)
+
+   # TRUE if the string is ""
+   FUN isEmpty(Str s) -> IF s == "" THEN TRUE ELSE FALSE
+
+   # TRUE if two strings are equal
+   FUN equals(Str a, Str b) -> IF a == b THEN TRUE ELSE FALSE
+
+   # join two strings
+   FUN concat(Str a, Str b) -> a + b
+
+   # wrap with a separator:  surround("X", "-") -> "-X-"
+   FUN surround(Str s, Str edge) -> edge + s + edge
+
+   # s repeated `times` times
+   FUN repeat(Str s, Int times) BEGIN
+      VAR out = ""
+      VAR i = 0
+      WHILE i < times THEN BEGIN
+         VAR out = out + s
+         VAR i = i + 1
+      END
+      RETURN out
+   END
+
+   # s followed by a newline
+   FUN line(Str s) -> s + "\n"
+
+   # wrap in double quotes
+   FUN quote(Str s) -> "\"" + s + "\""
+
+   # turn any value into its text form
+   FUN of(Any v) -> "" + v
+END

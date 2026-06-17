@@ -41,12 +41,25 @@ record VarAccessNode(Token varNameToken) implements Node {
     public Position posEnd()   { return varNameToken.posEnd();   }
 }
 
-record VarAssignNode(Token varNameToken, Node valueNode, boolean isConst) implements Node {
+/**
+ * A variable / constant declaration.
+ *   typeToken == null  -> inferred type (the VAR keyword, or an inferred CONST):
+ *                         works like Java's `var`, the type is read from the value.
+ *   typeToken != null  -> an explicit type annotation, e.g. `Int x = 5`. typeToken
+ *                         holds the type name ("Int", "Str", a class name, "Any", ...).
+ * isConst marks an immutable binding (CONST) that cannot be reassigned.
+ */
+record VarAssignNode(Token varNameToken, Node valueNode, boolean isConst, Token typeToken) implements Node {
     public Position posStart() { return varNameToken.posStart(); }
     public Position posEnd()   { return valueNode.posEnd();      }
 }
 
-record FunDefNode(Token varNameToken, List<Token> argNameTokens, Node bodyNode) implements Node {
+/**
+ * A function (or INIT constructor) definition.
+ * argNameTokens and argTypeTokens are parallel lists: argTypeTokens.get(i) is the
+ * declared type of parameter argNameTokens.get(i) (its value() is the type name).
+ */
+record FunDefNode(Token varNameToken, List<Token> argNameTokens, List<Token> argTypeTokens, Node bodyNode) implements Node {
     public Position posStart() { return varNameToken != null ? varNameToken.posStart() : bodyNode.posStart(); }
     public Position posEnd()   { return bodyNode.posEnd(); }
 }

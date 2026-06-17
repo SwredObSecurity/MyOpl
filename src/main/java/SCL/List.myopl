@@ -21,15 +21,15 @@ CLASS ListNode BEGIN
    VAR value = 0
    VAR next  = 0          # 0 means "no next" — List tracks count, so we never test this
 
-   INIT(v) BEGIN
+   INIT(Any v) BEGIN
       VAR value = v
    END
 
-   FUN setNext(n) BEGIN
+   FUN setNext(Any n) BEGIN
       VAR next = n
    END
 
-   FUN setValue(v) BEGIN
+   FUN setValue(Any v) BEGIN
       VAR value = v
    END
 END
@@ -50,7 +50,7 @@ CLASS List BEGIN
    FUN isEmpty() -> IF count == 0 THEN 1 ELSE 0
 
    # append x to the end; returns the new size
-   FUN add(x) BEGIN
+   FUN add(Any x) BEGIN
       VAR node = NEW ListNode(x)
       IF count == 0 THEN BEGIN
          VAR head = node
@@ -64,7 +64,7 @@ CLASS List BEGIN
    END
 
    # internal: the node at index i  (assumes 0 <= i < count)
-   FUN nodeAt(i) BEGIN
+   FUN nodeAt(Int i) BEGIN
       VAR cur = head
       VAR j = 0
       WHILE j < i THEN BEGIN
@@ -75,20 +75,20 @@ CLASS List BEGIN
    END
 
    # element at index i
-   FUN get(i) BEGIN
+   FUN get(Int i) BEGIN
       VAR cur = nodeAt(i)
       RETURN cur.value
    END
 
    # replace element at index i with x; returns x
-   FUN set(i, x) BEGIN
+   FUN set(Int i, Any x) BEGIN
       VAR cur = nodeAt(i)
       cur.setValue(x)
       RETURN x
    END
 
    # first index of x, or -1 if absent
-   FUN indexOf(x) BEGIN
+   FUN indexOf(Any x) BEGIN
       VAR cur = head
       VAR j = 0
       WHILE j < count THEN BEGIN
@@ -101,7 +101,7 @@ CLASS List BEGIN
    END
 
    # 1 if x is present, else 0
-   FUN contains(x) BEGIN
+   FUN contains(Any x) BEGIN
       IF indexOf(x) < 0 THEN
          RETURN 0
       ELSE
@@ -109,7 +109,7 @@ CLASS List BEGIN
    END
 
    # remove the element at index i; returns 1
-   FUN removeAt(i) BEGIN
+   FUN removeAt(Int i) BEGIN
       IF i == 0 THEN BEGIN
          VAR head = head.next
          VAR count = count - 1

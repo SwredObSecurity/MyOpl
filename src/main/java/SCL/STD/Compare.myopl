@@ -9,32 +9,32 @@
 *#
 CLASS Compare BEGIN
 
-   # equal?
-   FUN eq(a, b) -> IF a == b THEN 1 ELSE 0
+   # equal?  (works for numbers, strings and chars)
+   FUN eq(Any a, Any b) -> IF a == b THEN 1 ELSE 0
 
    # not equal?
-   FUN neq(a, b) -> IF a == b THEN 0 ELSE 1
+   FUN neq(Any a, Any b) -> IF a == b THEN 0 ELSE 1
 
    # a less than b?
-   FUN lt(a, b) -> IF a < b THEN 1 ELSE 0
+   FUN lt(Dec a, Dec b) -> IF a < b THEN 1 ELSE 0
 
    # a greater than b?
-   FUN gt(a, b) -> IF a > b THEN 1 ELSE 0
+   FUN gt(Dec a, Dec b) -> IF a > b THEN 1 ELSE 0
 
    # a less than or equal to b?
-   FUN lte(a, b) -> IF a <= b THEN 1 ELSE 0
+   FUN lte(Dec a, Dec b) -> IF a <= b THEN 1 ELSE 0
 
    # a greater than or equal to b?
-   FUN gte(a, b) -> IF a >= b THEN 1 ELSE 0
+   FUN gte(Dec a, Dec b) -> IF a >= b THEN 1 ELSE 0
 
    # is x between lo and hi (inclusive)?
-   FUN between(x, lo, hi) -> IF x < lo THEN 0 ELSE IF x > hi THEN 0 ELSE 1
+   FUN between(Dec x, Dec lo, Dec hi) -> IF x < lo THEN 0 ELSE IF x > hi THEN 0 ELSE 1
 
    # same as between — the name people often expect
-   FUN inRange(x, lo, hi) -> IF x < lo THEN 0 ELSE IF x > hi THEN 0 ELSE 1
+   FUN inRange(Dec x, Dec lo, Dec hi) -> IF x < lo THEN 0 ELSE IF x > hi THEN 0 ELSE 1
 
    # largest of three numbers
-   FUN max3(a, b, c) BEGIN
+   FUN max3(Dec a, Dec b, Dec c) BEGIN
       IF a >= b THEN BEGIN
          IF a >= c THEN
             RETURN a
@@ -46,7 +46,7 @@ CLASS Compare BEGIN
    END
 
    # smallest of three numbers
-   FUN min3(a, b, c) BEGIN
+   FUN min3(Dec a, Dec b, Dec c) BEGIN
       IF a <= b THEN BEGIN
          IF a <= c THEN
             RETURN a
@@ -58,8 +58,8 @@ CLASS Compare BEGIN
    END
 
    # keep x inside [lo, hi]  (same as Math.clamp, offered here too)
-   FUN clamp(x, lo, hi) -> IF x < lo THEN lo ELSE IF x > hi THEN hi ELSE x
+   FUN clamp(Dec x, Dec lo, Dec hi) -> IF x < lo THEN lo ELSE IF x > hi THEN hi ELSE x
 
    # close enough?  (1 if a and b are within eps of each other)
-   FUN approxEqual(a, b, eps) -> IF Math.abs(a - b) <= eps THEN 1 ELSE 0
+   FUN approxEqual(Dec a, Dec b, Dec eps) -> IF Math.abs(a - b) <= eps THEN 1 ELSE 0
 END

@@ -6,6 +6,10 @@ import java.nio.file.*;
 public class Interpreter {
     private Map<String, Object> symbols = new HashMap<>();
     private Set<String> constants = new HashSet<>();
+    /** Declared / inferred type name for each bound variable, parallel to `symbols`.
+     *  Powers typeOf() and the typed-declaration checks. Saved/restored alongside
+     *  `symbols` whenever a new scope is entered (classes, calls, NEW). */
+    private Map<String, String> varTypes = new HashMap<>();
     private final Scanner stdin = new Scanner(System.in);
     private String baseDir = ".";
 
@@ -24,7 +28,8 @@ public class Interpreter {
     }
 
     private static final Set<String> BUILTINS = Set.of(
-        "PRINT", "LEN", "INPUT", "INPUT_NUM", "READ_FILE", "WRITE_FILE", "APPEND_FILE"
+        "PRINT", "LEN", "INPUT", "INPUT_NUM", "READ_FILE", "WRITE_FILE", "APPEND_FILE", "typeOf",
+        "INPUT_STR", "INPUT_INT", "INPUT_DEC", "INPUT_BOOL", "INPUT_CHR"
     );
 
     public Interpreter() { registerBuiltins(); }
@@ -35,6 +40,11 @@ public class Interpreter {
     }
 
     public void setBaseDir(String dir) { this.baseDir = dir; }
+
+    /** Shared console access so the host (Shell) and the interpreter read from a
+     *  single Scanner — two Scanners on System.in would steal each other's input. */
+    public boolean hasConsoleLine() { return stdin.hasNextLine(); }
+    public String  readConsoleLine() { return stdin.nextLine(); }
 
     /**
      * Resolve an IMPORT target. First look next to the current file
@@ -79,7 +89,15 @@ public class Interpreter {
                 if (constants.contains(name))
                     throw new RuntimeException("Cannot reassign constant '" + name + "'");
                 Object val = visit(v.valueNode());
+                String type;
+                if (v.typeToken() != null) {
+                    type = (String) v.typeToken().value();   // explicit:  Int x = ...
+                    checkType(type, name, val);
+                } else {
+                    type = inferType(v.valueNode(), val);     // VAR / CONST infer the type
+                }
                 symbols.put(name, val);
+                varTypes.put(name, type);
                 if (v.isConst()) constants.add(name);
                 yield val;
             }
@@ -119,13 +137,21 @@ public class Interpreter {
             case ClassDefNode cd -> {
                 Map<String, Object> saved = symbols;
                 Set<String> savedConsts = constants;
+                Map<String, String> savedTypes = varTypes;
                 symbols = new HashMap<>();
                 constants = new HashSet<>();
+                varTypes = new HashMap<>();
                 visit(cd.body());
                 Map<String, Object> classScope = new HashMap<>(symbols);
+                String className = (String) cd.nameToken().value();
+                // Tag the class scope with its name so instances copied from it report
+                // their class via typeOf() and satisfy custom-type declarations.
+                classScope.put("__class__", className);
                 symbols = saved;
                 constants = savedConsts;
-                symbols.put((String) cd.nameToken().value(), classScope);
+                varTypes = savedTypes;
+                symbols.put(className, classScope);
+                varTypes.put(className, "Class");
                 yield null;
             }
 
@@ -181,15 +207,14 @@ public class Interpreter {
 
                     Map<String, Object> saved = symbols;
                     Set<String> savedConsts = constants;
+                    Map<String, String> savedTypes = varTypes;
                     symbols = new HashMap<>(saved);   // keep builtins + globals visible
                     symbols.putAll(instance);          // class members visible to the ctor
+                    varTypes = new HashMap<>(savedTypes);
                     Set<String> argNames = new HashSet<>();
-                    for (int i = 0; i < ctor.argNameTokens().size(); i++) {
-                        String an = (String) ctor.argNameTokens().get(i).value();
-                        argNames.add(an);
-                        symbols.put(an, i < argVals.size() ? argVals.get(i) : 0.0);
-                    }
+                    for (Token t : ctor.argNameTokens()) argNames.add((String) t.value());
                     constants = new HashSet<>(savedConsts);
+                    bindArgs(ctor, argVals);           // type-check + bind ctor parameters
                     callBody(ctor);
 
                     // Persist fields the ctor declared/changed (class members or brand-new
@@ -201,6 +226,7 @@ public class Interpreter {
                     }
                     symbols = saved;
                     constants = savedConsts;
+                    varTypes = savedTypes;
                 }
                 yield instance;
             }
@@ -211,6 +237,17 @@ public class Interpreter {
         Object callable = visit(call.nodeToCall());
 
         if (callable instanceof BuiltInFunctionNode bi) {
+            if (bi.name().equals("typeOf")) {
+                if (call.argNodes().isEmpty()) return "Null";
+                Node argNode = call.argNodes().get(0);
+                // For a plain variable, report its declared / inferred type directly,
+                // so e.g.  VAR b = TRUE  reads back as "Bool" not "Int".
+                if (argNode instanceof VarAccessNode va) {
+                    String nm = (String) va.varNameToken().value();
+                    if (varTypes.containsKey(nm)) return varTypes.get(nm);
+                }
+                return inferType(argNode, visit(argNode));
+            }
             if (bi.name().equals("PRINT")) {
                 for (Node n : call.argNodes()) System.out.print(visit(n) + " ");
                 System.out.println();
@@ -222,10 +259,27 @@ public class Interpreter {
                 if (!call.argNodes().isEmpty()) System.out.print(visit(call.argNodes().get(0)));
                 return stdin.nextLine();
             }
-            if (bi.name().equals("INPUT_NUM")) {
-                if (!call.argNodes().isEmpty()) System.out.print(visit(call.argNodes().get(0)));
-                try { return Double.parseDouble(stdin.nextLine().trim()); }
+            if (bi.name().equals("INPUT_NUM") || bi.name().equals("INPUT_DEC")) {
+                String line = readInputLine(call);
+                try { return Double.parseDouble(line.trim()); }
                 catch (NumberFormatException e) { return 0.0; }
+            }
+            if (bi.name().equals("INPUT_STR")) {
+                return readInputLine(call);                 // a Str (any text)
+            }
+            if (bi.name().equals("INPUT_INT")) {
+                String line = readInputLine(call);
+                try { return (double) (long) Double.parseDouble(line.trim()); }  // whole number, toward zero
+                catch (NumberFormatException e) { return 0.0; }
+            }
+            if (bi.name().equals("INPUT_BOOL")) {
+                String s = readInputLine(call).trim().toLowerCase();
+                return (s.equals("true") || s.equals("yes") || s.equals("y")
+                        || s.equals("t") || s.equals("1")) ? 1.0 : 0.0;
+            }
+            if (bi.name().equals("INPUT_CHR")) {
+                String s = readInputLine(call);             // a Chr: the first character typed
+                return s.isEmpty() ? "" : s.substring(0, 1);
             }
             if (bi.name().equals("READ_FILE")) {
                 try { return Files.readString(Path.of((String) visit(call.argNodes().get(0)))); }
@@ -256,9 +310,10 @@ public class Interpreter {
             for (Node n : call.argNodes()) argVals.add(visit(n));
             Map<String, Object> snap = new HashMap<>(symbols);
             Set<String> constSnap = new HashSet<>(constants);
+            Map<String, String> typeSnap = varTypes;
+            varTypes = new HashMap<>(typeSnap);
             symbols.putAll(bm.classScope());
-            for (int i = 0; i < def.argNameTokens().size() && i < argVals.size(); i++)
-                symbols.put((String) def.argNameTokens().get(i).value(), argVals.get(i));
+            bindArgs(def, argVals);
             Object res = callBody(def);
             // Persist writes to the object's OWN fields back into it, so methods
             // can mutate instance/class state across calls (e.g. a Random's seed).
@@ -266,6 +321,7 @@ public class Interpreter {
                 if (symbols.containsKey(k)) bm.classScope().put(k, symbols.get(k));
             symbols = snap;
             constants = constSnap;
+            varTypes = typeSnap;
             return res;
         }
 
@@ -274,12 +330,43 @@ public class Interpreter {
         for (Node n : call.argNodes()) argVals.add(visit(n));
         Map<String, Object> snap = new HashMap<>(symbols);
         Set<String> constSnap = new HashSet<>(constants);
-        for (int i = 0; i < def.argNameTokens().size() && i < argVals.size(); i++)
-            symbols.put((String) def.argNameTokens().get(i).value(), argVals.get(i));
+        Map<String, String> typeSnap = varTypes;
+        varTypes = new HashMap<>(typeSnap);
+        bindArgs(def, argVals);
         Object res = callBody(def);
         symbols = snap;
         constants = constSnap;
+        varTypes = typeSnap;
         return res;
+    }
+
+    /**
+     * Bind call arguments to a function's parameters in the current scope,
+     * enforcing each parameter's declared type and recording it for typeOf().
+     * Missing trailing arguments default to 0 (unchecked), matching the
+     * language's "a missing argument defaults to 0" rule.
+     */
+    private void bindArgs(FunDefNode def, List<Object> argVals) {
+        List<Token> names = def.argNameTokens();
+        List<Token> types = def.argTypeTokens();
+        String fname = def.varNameToken() != null ? (String) def.varNameToken().value() : "<function>";
+        for (int i = 0; i < names.size(); i++) {
+            String pname = (String) names.get(i).value();
+            Object val   = i < argVals.size() ? argVals.get(i) : 0.0;
+            String ptype = (types != null && i < types.size() && types.get(i) != null)
+                    ? (String) types.get(i).value() : null;
+            if (ptype != null && i < argVals.size() && !typeMatches(ptype, val))
+                throw new RuntimeException("Type error: parameter '" + pname + "' of '" + fname
+                        + "' expects " + ptype + " but got " + typeNameOfValue(val) + " value");
+            symbols.put(pname, val);
+            if (ptype != null) varTypes.put(pname, ptype);
+        }
+    }
+
+    /** Print the optional prompt argument (if any) and read one line from stdin. */
+    private String readInputLine(CallNode call) {
+        if (!call.argNodes().isEmpty()) System.out.print(visit(call.argNodes().get(0)));
+        return stdin.nextLine();
     }
 
     /** Runs a function body, turning a RETURN anywhere inside it into the call's result. */
@@ -325,5 +412,78 @@ public class Interpreter {
     private Double visitUnaryOp(UnaryOpNode u) {
         double val = ((Number) visit(u.node())).doubleValue();
         return u.opToken().type().equals("MINUS") ? -val : val;
+    }
+
+    // ── Type system ─────────────────────────────────────────────────────────
+
+    /** Throw a clear error if `val` cannot inhabit the declared type `declared`. */
+    private void checkType(String declared, String name, Object val) {
+        if (!typeMatches(declared, val))
+            throw new RuntimeException("Type error: cannot assign " + typeNameOfValue(val)
+                    + " value to '" + name + "' (declared as " + declared + ")");
+    }
+
+    /**
+     * Does a runtime value satisfy a declared type name? Because MyOPL stores
+     * booleans as numbers and chars as one-character strings, the built-in checks
+     * are by broad category (number / text / list / object). `Any` accepts anything;
+     * an unknown name is treated as a class type and matched against the value's
+     * own class tag.
+     */
+    private boolean typeMatches(String type, Object v) {
+        if (type == null) return true;
+        return switch (type) {
+            case "Any", "Obj", "Object"            -> true;
+            case "Int", "Dec", "Num", "Number", "Bool" -> v instanceof Double || v instanceof Boolean;
+            case "Str", "String"                   -> v instanceof String;
+            case "Chr", "Char"                     -> v instanceof String s && s.length() == 1;
+            case "List"                            -> v instanceof List;
+            case "Fun"                             -> v instanceof FunDefNode || v instanceof BoundMethod || v instanceof BuiltInFunctionNode;
+            default -> {
+                if (v instanceof Map<?, ?> m) {
+                    Object tag = m.get("__class__");
+                    yield tag == null || tag.equals(type);   // class instance of the right class
+                }
+                yield false;
+            }
+        };
+    }
+
+    /**
+     * Infer a type name for an inferred (VAR/CONST) binding. The static shape of
+     * the value expression is preferred (it distinguishes Chr/Str and Bool, which
+     * look identical at runtime); otherwise we fall back to the runtime value.
+     */
+    private String inferType(Node valueNode, Object val) {
+        if (valueNode instanceof CharNode)   return "Chr";
+        if (valueNode instanceof StringNode) return "Str";
+        if (valueNode instanceof NumberNode nn) {
+            String tt = nn.token().type();
+            if (tt.equals("BOOL"))  return "Bool";
+            if (tt.equals("FLOAT")) return "Dec";
+            return "Int";
+        }
+        if (valueNode instanceof BinOpNode b) {
+            String op = b.opToken().type();
+            if (op.equals("EE") || op.equals("NE") || op.equals("LT")
+                    || op.equals("GT") || op.equals("LTE") || op.equals("GTE"))
+                return "Bool";
+        }
+        if (valueNode instanceof NewNode nw) return (String) nw.classNameToken().value();
+        if (valueNode instanceof ListNode)   return "List";
+        return typeNameOfValue(val);
+    }
+
+    /** Best-effort type name from a runtime value alone. */
+    private String typeNameOfValue(Object v) {
+        if (v == null) return "Null";
+        if (v instanceof Double d)
+            return (d == Math.floor(d) && !d.isInfinite() && !d.isNaN()) ? "Int" : "Dec";
+        if (v instanceof Boolean) return "Bool";
+        if (v instanceof String s) return s.length() == 1 ? "Chr" : "Str";
+        if (v instanceof List) return "List";
+        if (v instanceof Map<?, ?> m) { Object t = m.get("__class__"); return t != null ? t.toString() : "Object"; }
+        if (v instanceof FunDefNode || v instanceof BoundMethod || v instanceof BuiltInFunctionNode) return "Fun";
+        return "Unknown";
     }
 }

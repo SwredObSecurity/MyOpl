@@ -13,35 +13,35 @@ CLASS Physics BEGIN
    CONST SPEED_OF_SOUND_AIR  = 343         # m/s (air at 20C)
 
    # F = mass x acceleration
-   FUN force(m, a) -> m * a
+   FUN force(Dec m, Dec a) -> m * a
 
    # energy of a moving object:  1/2 m v^2
-   FUN kineticEnergy(m, v) -> 0.5 * m * v * v
+   FUN kineticEnergy(Dec m, Dec v) -> 0.5 * m * v * v
 
    # energy of a raised object on Earth:  m g h
-   FUN potentialEnergy(m, h) -> m * G_EARTH * h
+   FUN potentialEnergy(Dec m, Dec h) -> m * G_EARTH * h
 
    # mass x velocity
-   FUN momentum(m, v) -> m * v
+   FUN momentum(Dec m, Dec v) -> m * v
 
    # force applied across a distance
-   FUN workDone(f, d) -> f * d
+   FUN workDone(Dec f, Dec d) -> f * d
 
    # work done per unit time
-   FUN mechanicalPower(w, t) -> w / t
+   FUN mechanicalPower(Dec w, Dec t) -> w / t
 
    # force over an area
-   FUN pressure(f, a) -> f / a
+   FUN pressure(Dec f, Dec a) -> f / a
 
    # mass per volume
-   FUN density(m, v) -> m / v
+   FUN density(Dec m, Dec v) -> m / v
 
    # mass x Earth's gravity
-   FUN weight(m) -> m * G_EARTH
+   FUN weight(Dec m) -> m * G_EARTH
 
    # distance covered per time
-   FUN velocity(d, t) -> d / t
+   FUN velocity(Dec d, Dec t) -> d / t
 
    # change in velocity over change in time
-   FUN acceleration(dv, dt) -> dv / dt
+   FUN acceleration(Dec dv, Dec dt) -> dv / dt
 END

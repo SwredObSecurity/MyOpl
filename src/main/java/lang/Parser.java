@@ -9,6 +9,9 @@ public class Parser {
     public Parser(List<Token> tokens) { this.tokens = tokens; advance(); }
     private void advance() { idx++; current = (idx < tokens.size()) ? tokens.get(idx) : null; }
 
+    /** Look ahead k tokens from the current one without consuming (peek(0) == current). */
+    private Token peek(int k) { int j = idx + k; return (j >= 0 && j < tokens.size()) ? tokens.get(j) : null; }
+
     public Node parse() {
         List<Node> statements = new ArrayList<>();
         Position start = current != null ? current.posStart() : null;
@@ -25,8 +28,8 @@ public class Parser {
     private Node expr() {
         if (current != null && current.type().equals("KEYWORD")) {
             String val = (String) current.value();
-            if (val.equals("VAR"))    { advance(); Token n = current; advance(); advance(); return new VarAssignNode(n, expr(), false); }
-            if (val.equals("CONST"))  { advance(); Token n = current; advance(); advance(); return new VarAssignNode(n, expr(), true); }
+            if (val.equals("VAR"))    return varDecl(false);
+            if (val.equals("CONST"))  return varDecl(true);
             if (val.equals("IF"))     return ifExpr();
             if (val.equals("FOR"))    return forExpr();
             if (val.equals("WHILE"))  return whileExpr();
@@ -34,9 +37,65 @@ public class Parser {
             if (val.equals("CLASS"))  return classDefExpr();
             if (val.equals("IMPORT")) return importExpr();
         }
+        // Typed declaration:  Type name = expr   (two identifiers followed by '=').
+        // Two identifiers in a row only ever mean a typed declaration, and the
+        // trailing '=' separates it cleanly from a bare identifier expression.
+        if (current != null && current.type().equals("IDENTIFIER")
+                && peek(1) != null && peek(1).type().equals("IDENTIFIER")
+                && peek(2) != null && peek(2).type().equals("EQ")) {
+            Token typeTok = current; advance();   // consume Type
+            Token nameTok = current; advance();   // consume name
+            advance();                            // consume '='
+            return new VarAssignNode(nameTok, expr(), false, typeTok);
+        }
         // Comparisons are the lowest precedence (outermost), so additive operators
         // bind tighter:  i + 1 <= x  parses as  (i + 1) <= x.
         return binOp(this::arith, List.of("EE", "NE", "LT", "GT", "LTE", "GTE"));
+    }
+
+    /**
+     * VAR / CONST declaration. Both infer the type from the value (like Java's
+     * `var`); CONST additionally makes the binding immutable. An optional explicit
+     * type is tolerated too, e.g.  CONST Int X = 5.
+     *   VAR name = expr            (inferred, mutable)
+     *   CONST name = expr          (inferred, immutable)
+     *   VAR/CONST Type name = expr (explicit type)
+     */
+    private Node varDecl(boolean isConst) {
+        advance();                               // consume VAR / CONST
+        Token typeTok = null;
+        if (current != null && current.type().equals("IDENTIFIER")
+                && peek(1) != null && peek(1).type().equals("IDENTIFIER")) {
+            typeTok = current; advance();         // consume explicit type name
+        }
+        Token name = current; advance();          // consume variable name
+        if (current != null && current.type().equals("EQ")) advance();   // consume '='
+        return new VarAssignNode(name, expr(), isConst, typeTok);
+    }
+
+    /**
+     * Parse a typed parameter list (the tokens between the parentheses).
+     * Every parameter must be written as 'Type name'; names and types are
+     * collected into the two parallel lists.
+     */
+    private void parseParams(List<Token> names, List<Token> types) {
+        if (current != null && current.type().equals("IDENTIFIER")) {
+            parseOneParam(names, types);
+            while (current != null && current.type().equals("COMMA")) { advance(); parseOneParam(names, types); }
+        }
+    }
+
+    private void parseOneParam(List<Token> names, List<Token> types) {
+        Token typeTok = current;
+        if (typeTok == null || !typeTok.type().equals("IDENTIFIER"))
+            throw new RuntimeException("Expected a parameter type name");
+        advance();
+        if (current == null || !current.type().equals("IDENTIFIER"))
+            throw new RuntimeException("Parameter '" + typeTok.value()
+                + "' must be written as 'Type name' (a type then a name), e.g. FUN f(Int x)");
+        types.add(typeTok);
+        names.add(current);
+        advance();
     }
 
     // ── Control-flow helpers ──────────────────────────────────────────────
@@ -149,7 +208,9 @@ public class Parser {
             if (current.value().equals("TRUE") || current.value().equals("FALSE")) {
                 Token t = current; advance();
                 double v = t.value().equals("TRUE") ? 1.0 : 0.0;
-                return new NumberNode(new Token("INT", v, t.posStart(), t.posEnd()));
+                // Tagged "BOOL" (still a 1.0 / 0.0 Double at runtime) so the type
+                // layer can infer Bool for  VAR b = TRUE.
+                return new NumberNode(new Token("BOOL", v, t.posStart(), t.posEnd()));
             }
             if (current.value().equals("BEGIN")) {
                 Position s = current.posStart(); advance();
@@ -191,19 +252,17 @@ public class Parser {
         if (current != null && current.type().equals("IDENTIFIER")) { name = current; advance(); }
         if (current != null && current.type().equals("LPAREN")) advance();
         List<Token> args = new ArrayList<>();
-        if (current != null && current.type().equals("IDENTIFIER")) {
-            args.add(current); advance();
-            while (current != null && current.type().equals("COMMA")) { advance(); args.add(current); advance(); }
-        }
+        List<Token> argTypes = new ArrayList<>();
+        parseParams(args, argTypes);
         if (current != null && current.type().equals("RPAREN")) advance();
 
         // Single-line body:  FUN f(args) -> expr
-        if (current != null && current.type().equals("ARROW")) { advance(); return new FunDefNode(name, args, expr()); }
+        if (current != null && current.type().equals("ARROW")) { advance(); return new FunDefNode(name, args, argTypes, expr()); }
 
         // Multi-line body:  FUN f(args) BEGIN stmt stmt ... END   (atom() parses the BEGIN ... END block)
         if (current == null || !current.type().equals("KEYWORD") || !"BEGIN".equals(current.value()))
             throw new RuntimeException("Expected '->' for a single-line body, or 'BEGIN ... END' for a multi-line function body");
-        return new FunDefNode(name, args, expr());
+        return new FunDefNode(name, args, argTypes, expr());
     }
 
     /**
@@ -216,16 +275,14 @@ public class Parser {
         Token name = new Token("IDENTIFIER", "__init__", kw.posStart(), kw.posEnd());
         if (current != null && current.type().equals("LPAREN")) advance();
         List<Token> args = new ArrayList<>();
-        if (current != null && current.type().equals("IDENTIFIER")) {
-            args.add(current); advance();
-            while (current != null && current.type().equals("COMMA")) { advance(); args.add(current); advance(); }
-        }
+        List<Token> argTypes = new ArrayList<>();
+        parseParams(args, argTypes);
         if (current != null && current.type().equals("RPAREN")) advance();
 
-        if (current != null && current.type().equals("ARROW")) { advance(); return new FunDefNode(name, args, expr()); }
+        if (current != null && current.type().equals("ARROW")) { advance(); return new FunDefNode(name, args, argTypes, expr()); }
         if (current == null || !current.type().equals("KEYWORD") || !"BEGIN".equals(current.value()))
             throw new RuntimeException("Expected '->' or 'BEGIN ... END' for an INIT constructor body");
-        return new FunDefNode(name, args, expr());
+        return new FunDefNode(name, args, argTypes, expr());
     }
 
     /**

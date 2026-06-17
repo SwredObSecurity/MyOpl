@@ -17,10 +17,10 @@ CLASS Console BEGIN
    # --- output (System.out) ---
 
    # write a value followed by a newline
-   FUN println(x) -> PRINT(x)
+   FUN println(Any x) -> PRINT(x)
 
    # same as println (no newline-less print exists in MyOPL)
-   FUN print(x) -> PRINT(x)
+   FUN print(Any x) -> PRINT(x)
 
    # print a blank line
    FUN newLine() -> PRINT("")
@@ -28,14 +28,20 @@ CLASS Console BEGIN
    # --- input (Scanner) ---
 
    # show prompt, read one line, return it as a string
-   FUN readLine(prompt) -> INPUT(prompt)
+   FUN readLine(Str prompt) -> INPUT(prompt)
 
    # read one line with no prompt
    FUN nextLine() -> INPUT("")
 
-   # show prompt, read one line parsed as a number (bad input -> 0)
-   FUN nextInt(prompt) -> INPUT_NUM(prompt)
+   # show prompt, read one line parsed as a whole number (bad input -> 0)
+   FUN nextInt(Str prompt) -> INPUT_INT(prompt)
 
-   # show prompt, read one line parsed as a number (bad input -> 0)
-   FUN nextDouble(prompt) -> INPUT_NUM(prompt)
+   # show prompt, read one line parsed as a decimal number (bad input -> 0)
+   FUN nextDouble(Str prompt) -> INPUT_DEC(prompt)
+
+   # show prompt, read a yes/no answer as a Bool (1 / 0)
+   FUN nextBool(Str prompt) -> INPUT_BOOL(prompt)
+
+   # show prompt, read a single character (the first one typed)
+   FUN nextChar(Str prompt) -> INPUT_CHR(prompt)
 END

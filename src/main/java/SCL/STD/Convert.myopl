@@ -7,49 +7,49 @@
 CLASS Convert BEGIN
 
    # --- temperature ---
-   FUN celsiusToFahrenheit(c) -> c * 9 / 5 + 32
-   FUN fahrenheitToCelsius(f) -> (f - 32) * 5 / 9
-   FUN celsiusToKelvin(c)     -> c + 273.15
-   FUN kelvinToCelsius(k)     -> k - 273.15
-   FUN fahrenheitToKelvin(f)  -> (f - 32) * 5 / 9 + 273.15
-   FUN kelvinToFahrenheit(k)  -> (k - 273.15) * 9 / 5 + 32
+   FUN celsiusToFahrenheit(Dec c) -> c * 9 / 5 + 32
+   FUN fahrenheitToCelsius(Dec f) -> (f - 32) * 5 / 9
+   FUN celsiusToKelvin(Dec c)     -> c + 273.15
+   FUN kelvinToCelsius(Dec k)     -> k - 273.15
+   FUN fahrenheitToKelvin(Dec f)  -> (f - 32) * 5 / 9 + 273.15
+   FUN kelvinToFahrenheit(Dec k)  -> (k - 273.15) * 9 / 5 + 32
 
    # --- length ---
-   FUN milesToKm(m)     -> m * 1.609344
-   FUN kmToMiles(k)     -> k / 1.609344
-   FUN feetToMeters(ft) -> ft * 0.3048
-   FUN metersToFeet(m)  -> m / 0.3048
-   FUN inchesToCm(i)    -> i * 2.54
-   FUN cmToInches(c)    -> c / 2.54
-   FUN yardsToMeters(y) -> y * 0.9144
-   FUN metersToYards(m) -> m / 0.9144
+   FUN milesToKm(Dec m)     -> m * 1.609344
+   FUN kmToMiles(Dec k)     -> k / 1.609344
+   FUN feetToMeters(Dec ft) -> ft * 0.3048
+   FUN metersToFeet(Dec m)  -> m / 0.3048
+   FUN inchesToCm(Dec i)    -> i * 2.54
+   FUN cmToInches(Dec c)    -> c / 2.54
+   FUN yardsToMeters(Dec y) -> y * 0.9144
+   FUN metersToYards(Dec m) -> m / 0.9144
 
    # --- mass ---
-   FUN kgToPounds(kg)   -> kg * 2.20462262185
-   FUN poundsToKg(lb)   -> lb / 2.20462262185
-   FUN gramsToOunces(g) -> g / 28.349523125
-   FUN ouncesToGrams(oz) -> oz * 28.349523125
+   FUN kgToPounds(Dec kg)   -> kg * 2.20462262185
+   FUN poundsToKg(Dec lb)   -> lb / 2.20462262185
+   FUN gramsToOunces(Dec g) -> g / 28.349523125
+   FUN ouncesToGrams(Dec oz) -> oz * 28.349523125
 
    # --- time ---
-   FUN secondsToMinutes(s) -> s / 60
-   FUN minutesToSeconds(m) -> m * 60
-   FUN minutesToHours(m)   -> m / 60
-   FUN hoursToMinutes(h)   -> h * 60
-   FUN hoursToSeconds(h)   -> h * 3600
-   FUN secondsToHours(s)   -> s / 3600
-   FUN daysToHours(d)      -> d * 24
-   FUN hoursToDays(h)      -> h / 24
-   FUN daysToSeconds(d)    -> d * 86400
+   FUN secondsToMinutes(Dec s) -> s / 60
+   FUN minutesToSeconds(Dec m) -> m * 60
+   FUN minutesToHours(Dec m)   -> m / 60
+   FUN hoursToMinutes(Dec h)   -> h * 60
+   FUN hoursToSeconds(Dec h)   -> h * 3600
+   FUN secondsToHours(Dec s)   -> s / 3600
+   FUN daysToHours(Dec d)      -> d * 24
+   FUN hoursToDays(Dec h)      -> h / 24
+   FUN daysToSeconds(Dec d)    -> d * 86400
 
    # --- angle ---
-   FUN degreesToRadians(d) -> d * 3.14159265358979 / 180
-   FUN radiansToDegrees(r) -> r * 180 / 3.14159265358979
+   FUN degreesToRadians(Dec d) -> d * 3.14159265358979 / 180
+   FUN radiansToDegrees(Dec r) -> r * 180 / 3.14159265358979
 
    # --- data size ---
-   FUN bytesToKB(b) -> b / 1024
-   FUN kbToMB(k)    -> k / 1024
-   FUN mbToGB(m)    -> m / 1024
-   FUN gbToTB(g)    -> g / 1024
-   FUN bytesToMB(b) -> b / 1048576
-   FUN bytesToGB(b) -> b / 1073741824
+   FUN bytesToKB(Dec b) -> b / 1024
+   FUN kbToMB(Dec k)    -> k / 1024
+   FUN mbToGB(Dec m)    -> m / 1024
+   FUN gbToTB(Dec g)    -> g / 1024
+   FUN bytesToMB(Dec b) -> b / 1048576
+   FUN bytesToGB(Dec b) -> b / 1073741824
 END

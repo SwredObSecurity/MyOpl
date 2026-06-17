@@ -6,24 +6,24 @@
 *#
 CLASS Logging BEGIN
 
-   FUN info(msg)    -> PRINT("[INFO] " + msg)
-   FUN warn(msg)    -> PRINT("[WARN] " + msg)
-   FUN error(msg)   -> PRINT("[ERROR] " + msg)
-   FUN debug(msg)   -> PRINT("[DEBUG] " + msg)
-   FUN success(msg) -> PRINT("[OK] " + msg)
+   FUN info(Str msg)    -> PRINT("[INFO] " + msg)
+   FUN warn(Str msg)    -> PRINT("[WARN] " + msg)
+   FUN error(Str msg)   -> PRINT("[ERROR] " + msg)
+   FUN debug(Str msg)   -> PRINT("[DEBUG] " + msg)
+   FUN success(Str msg) -> PRINT("[OK] " + msg)
 
    # a row of dashes
    FUN divider() -> PRINT("------------------------------")
 
    # a divider, then the message, then another divider
-   FUN banner(msg) BEGIN
+   FUN banner(Str msg) BEGIN
       PRINT("------------------------------")
       PRINT(msg)
       PRINT("------------------------------")
    END
 
    # numbered progress:  [n] msg
-   FUN step(n, msg) -> PRINT("[" + n + "] " + msg)
+   FUN step(Any n, Str msg) -> PRINT("[" + n + "] " + msg)
 
    # an empty line for spacing
    FUN blank() -> PRINT("")

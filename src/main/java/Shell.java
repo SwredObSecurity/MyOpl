@@ -10,9 +10,8 @@ public class Shell {
 
     public static void main(String[] args) {
         loadStandardClassLibrary();
-        Scanner sc = new Scanner(System.in);
         System.out.print("File path (blank for REPL): ");
-        String path = sc.hasNextLine() ? sc.nextLine() : "";
+        String path = interpreter.hasConsoleLine() ? interpreter.readConsoleLine() : "";
         path = path.trim();
         if (path.length() >= 2 && path.startsWith("\"") && path.endsWith("\"")) {
             path = path.substring(1, path.length() - 1);
@@ -30,8 +29,8 @@ public class Shell {
             interpreter.setBaseDir(".");
             while (true) {
                 System.out.print("myopl > ");
-                if (!sc.hasNextLine()) break;
-                String in = sc.nextLine();
+                if (!interpreter.hasConsoleLine()) break;
+                String in = interpreter.readConsoleLine();
                 if (in.equalsIgnoreCase("exit")) break;
                 if (!in.isBlank()) execute(in, true);
             }

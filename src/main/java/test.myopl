@@ -1,7 +1,7 @@
 #*
   MyOPL feature tour — every language feature in one runnable file.
   Each PRINT notes its expected output. Runs non-interactively
-  (the INPUT examples in section 14 are commented out on purpose).
+  (the INPUT examples in sections 14 and 23 are commented out on purpose).
 *#
 
 # 1. Variables and Math
@@ -9,7 +9,7 @@ VAR x = 10
 VAR y = (x * 5) / 2
 PRINT("Math Test (Expected 25.0):", y)
 
-# 2. CONST — a value that cannot be reassigned (try `CONST k = 1  VAR k = 2` -> error)
+# 2. CONST — like VAR (the type is inferred) but the value cannot be reassigned
 CONST MAX = 100
 PRINT("Constant (Expected 100):", MAX)
 
@@ -19,10 +19,12 @@ PRINT("Negate a variable (Expected -10.0):", -x)
 PRINT("Double negative (Expected 5.0):", 2 - -3)
 PRINT("Unary in product (Expected -20.0):", -2 * x)
 
-# 4. Strings, concatenation and escapes
+# 4. Strings, concatenation and escapes (full Java escape set)
 VAR name = "User"
 PRINT("Hello " + name + "!")
 PRINT("Escapes ->\n\tindented second line")
+PRINT("Octal \\101 gives A (Expected A):", "\101")
+PRINT("More escapes -> backspace[\b] formfeed[\f] space[\s]done")
 
 # 5. Chars — single-quoted, exactly one character
 VAR grade = 'A'
@@ -38,16 +40,16 @@ PRINT("String equality (Expected 1.0):", "hi" == "hi")
 VAR myList = [1, 2, 3, 4]
 PRINT("List Length (Expected 4.0):", LEN(myList))
 
-# 8. Functions (single-line, arrow)
-FUN square(n) -> n * n
+# 8. Functions (single-line, arrow) — parameters are typed: Type name
+FUN square(Int n) -> n * n
 PRINT("Square of 4 (Expected 16.0):", square(4))
 
 # 9. Functions (single-line returning an IF expression)
-FUN checkStatus(val) -> IF val > 20 THEN "High" ELSE "Low"
+FUN checkStatus(Dec val) -> IF val > 20 THEN "High" ELSE "Low"
 PRINT("Status Check (Expected High):", checkStatus(y))
 
 # 10. Functions (multi-line, BEGIN...END, with RETURN and ELSE IF chaining)
-FUN classify(n) BEGIN
+FUN classify(Dec n) BEGIN
     IF n > 0 THEN
         RETURN "positive"
     ELSE IF n < 0 THEN
@@ -87,9 +89,9 @@ PRINT("File contents after APPEND_FILE:", READ_FILE(path))
 
 # 15. Classes — static-style use (call methods/fields straight off the class)
 CLASS Calculator BEGIN
-    FUN add(a, b) -> a + b
-    FUN subtract(a, b) -> a - b
-    FUN isPositive(n) -> IF n > 0 THEN "Yes" ELSE "No"
+    FUN add(Dec a, Dec b) -> a + b
+    FUN subtract(Dec a, Dec b) -> a - b
+    FUN isPositive(Dec n) -> IF n > 0 THEN "Yes" ELSE "No"
     VAR version = 2.0
 END
 PRINT("Class add (Expected 15.0):", Calculator.add(10, 5))
@@ -101,7 +103,7 @@ PRINT("Class IF method (Expected Yes):", Calculator.isPositive(7))
 CLASS Point BEGIN
     VAR px = 0
     VAR py = 0
-    INIT(a, b) BEGIN
+    INIT(Dec a, Dec b) BEGIN
         VAR px = a
         VAR py = b
     END
@@ -123,7 +125,7 @@ PRINT("Imported multiply (Expected 12.0):", MathHelper.multiply(3, 4))
 PRINT("Imported square (Expected 25.0):", MathHelper.square(5))
 PRINT("Imported field PI (Expected 3.14159):", MathHelper.PI)
 
-# 18. Booleans — TRUE / FALSE keywords (just 1 / 0 under the hood)
+# 18. Booleans — TRUE / FALSE keywords (1 / 0 under the hood, but typed Bool)
 VAR yes = TRUE
 VAR no  = FALSE
 PRINT("TRUE (Expected 1.0):", yes)
@@ -179,3 +181,47 @@ items.add(30)
 PRINT("List size (Expected 3.0):", items.size())
 PRINT("List get(1) (Expected 20.0):", items.get(1))
 PRINT("List toString (Expected [10.0, 20.0, 30.0]):", items.toString())
+
+# 21. TYPED VARIABLES — every variable has a type. The five built-in types are
+#     Int, Dec, Str, Chr and Bool. VAR/CONST infer the type (like Java's var);
+#     an explicit annotation 'Type name = value' declares it directly.
+Int   anInt   = 5
+Dec   aDec    = 3.14
+Str   aStr    = "hello"
+Chr   aChr    = 'Z'
+Bool  aBool   = TRUE
+VAR   inferred = 42          # inferred as Int
+CONST locked   = "fixed"     # inferred as Str, immutable
+PRINT("typeOf(anInt)   (Expected Int):", typeOf(anInt))
+PRINT("typeOf(aDec)    (Expected Dec):", typeOf(aDec))
+PRINT("typeOf(aStr)    (Expected Str):", typeOf(aStr))
+PRINT("typeOf(aChr)    (Expected Chr):", typeOf(aChr))
+PRINT("typeOf(aBool)   (Expected Bool):", typeOf(aBool))
+PRINT("typeOf(inferred)(Expected Int):", typeOf(inferred))
+PRINT("typeOf(locked)  (Expected Str):", typeOf(locked))
+PRINT("typeOf(items)   (Expected List):", typeOf(items))
+PRINT("typeOf(p)       (Expected Point):", typeOf(p))
+
+# A non-built-in type is just the class name. Typed function parameters too:
+FUN birthday(Int age) -> age + 1
+PRINT("birthday(30) (Expected 31.0):", birthday(30))
+
+# 22. TYPE COMPANION CLASSES — each built-in type has an auto-loaded helper class.
+PRINT("Int.isEven(4)     (Expected 1.0):", Int.isEven(4))
+PRINT("Int.factorial(5)  (Expected 120.0):", Int.factorial(5))
+PRINT("Dec.round(3.75)   (Expected 4.0):", Dec.round(3.75))
+PRINT("Dec.sqrt(9)       (Expected 3.0):", Dec.sqrt(9))
+PRINT("Str.repeat(ab,3)  (Expected ababab):", Str.repeat("ab", 3))
+PRINT("Str.isEmpty('')   (Expected 1.0):", Str.isEmpty(""))
+PRINT("Chr.isVowel('e')  (Expected 1.0):", Chr.isVowel('e'))
+PRINT("Bool.toYesNo(T)   (Expected yes):", Bool.toYesNo(TRUE))
+
+# 23. TYPED INPUT — read each type from the user (commented out: non-interactive).
+#     Built-ins: INPUT_STR, INPUT_INT, INPUT_DEC, INPUT_BOOL, INPUT_CHR
+#     Or via the companion classes / Console:
+# Str  who  = Str.input("Name? ")
+# Int  age  = Int.input("Age? ")
+# Dec  temp = Dec.input("Temperature? ")
+# Bool ok   = Bool.input("Continue (yes/no)? ")
+# Chr  pick = Chr.input("Pick a letter: ")
+# PRINT("You entered:", who, age, temp, ok, pick)

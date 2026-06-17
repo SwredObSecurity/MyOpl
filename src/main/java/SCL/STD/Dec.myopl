@@ -1,0 +1,49 @@
+#*
+   Dec — the companion class for the Dec type (decimal / real numbers).
+
+   Auto-loaded, so it is ready without IMPORT. Most helpers delegate to Math.
+   The Dec TYPE is a built-in: declare with  Dec x = 3.14  (see Grammar.txt).
+
+       Dec x = 3.75
+       PRINT(Dec.floor(x))    # 3.0
+       PRINT(Dec.round(x))    # 4.0
+       PRINT(Dec.sqrt(2))     # ~1.41421
+*#
+CLASS Dec BEGIN
+
+   # show prompt, read a decimal number from the user (bad input -> 0)
+   FUN input(Str prompt) -> INPUT_DEC(prompt)
+
+   # rounding
+   FUN floor(Dec n) -> Math.floor(n)
+   FUN ceil(Dec n)  -> Math.ceil(n)
+   FUN round(Dec n) -> Math.round(n)
+   FUN trunc(Dec n) -> Math.trunc(n)
+
+   # fractional part in [0, 1)
+   FUN frac(Dec n) -> Math.frac(n)
+
+   # absolute value and sign
+   FUN abs(Dec n)  -> Math.abs(n)
+   FUN sign(Dec n) -> Math.sign(n)
+
+   # square root and powers
+   FUN sqrt(Dec n)            -> Math.sqrt(n)
+   FUN pow(Dec base, Int exp) -> Math.pow(base, exp)
+
+   # smaller / larger of two
+   FUN min(Dec a, Dec b) -> Math.min(a, b)
+   FUN max(Dec a, Dec b) -> Math.max(a, b)
+
+   # keep n inside [lo, hi]
+   FUN clamp(Dec n, Dec lo, Dec hi) -> Math.clamp(n, lo, hi)
+
+   # linear interpolation between a and b by t in [0, 1]
+   FUN lerp(Dec a, Dec b, Dec t) -> Math.lerp(a, b, t)
+
+   # TRUE if a and b are within eps of each other
+   FUN approxEqual(Dec a, Dec b, Dec eps) -> Math.approxEqual(a, b, eps)
+
+   # text form
+   FUN toString(Dec n) -> "" + n
+END

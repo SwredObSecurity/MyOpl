@@ -9,56 +9,56 @@
 *#
 CLASS Assert BEGIN
 
-   FUN assertEqual(actual, expected, label) BEGIN
+   FUN assertEqual(Any actual, Any expected, Str label) BEGIN
       IF actual == expected THEN
          PRINT("[PASS] " + label)
       ELSE
          PRINT("[FAIL] " + label + " (expected " + expected + ", got " + actual + ")")
    END
 
-   FUN assertNotEqual(actual, unexpected, label) BEGIN
+   FUN assertNotEqual(Any actual, Any unexpected, Str label) BEGIN
       IF actual == unexpected THEN
          PRINT("[FAIL] " + label + " (got the unexpected value " + unexpected + ")")
       ELSE
          PRINT("[PASS] " + label)
    END
 
-   FUN assertTrue(condition, label) BEGIN
+   FUN assertTrue(Any condition, Str label) BEGIN
       IF condition == 0 THEN
          PRINT("[FAIL] " + label + " (expected true, got 0)")
       ELSE
          PRINT("[PASS] " + label)
    END
 
-   FUN assertFalse(condition, label) BEGIN
+   FUN assertFalse(Any condition, Str label) BEGIN
       IF condition == 0 THEN
          PRINT("[PASS] " + label)
       ELSE
          PRINT("[FAIL] " + label + " (expected false, got " + condition + ")")
    END
 
-   FUN assertApprox(actual, expected, eps, label) BEGIN
+   FUN assertApprox(Dec actual, Dec expected, Dec eps, Str label) BEGIN
       IF Math.abs(actual - expected) <= eps THEN
          PRINT("[PASS] " + label)
       ELSE
          PRINT("[FAIL] " + label + " (expected ~" + expected + ", got " + actual + ")")
    END
 
-   FUN assertPositive(n, label) BEGIN
+   FUN assertPositive(Dec n, Str label) BEGIN
       IF n > 0 THEN
          PRINT("[PASS] " + label)
       ELSE
          PRINT("[FAIL] " + label + " (expected > 0, got " + n + ")")
    END
 
-   FUN assertNegative(n, label) BEGIN
+   FUN assertNegative(Dec n, Str label) BEGIN
       IF n < 0 THEN
          PRINT("[PASS] " + label)
       ELSE
          PRINT("[FAIL] " + label + " (expected < 0, got " + n + ")")
    END
 
-   FUN assertZero(n, label) BEGIN
+   FUN assertZero(Dec n, Str label) BEGIN
       IF n == 0 THEN
          PRINT("[PASS] " + label)
       ELSE

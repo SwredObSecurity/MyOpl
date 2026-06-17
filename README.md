@@ -4,33 +4,41 @@ A custom programming language built from scratch in Java. MyOpl ships with a han
 
 ## Features
 
-- **Variables** with `VAR name = value`
-- **Functions** with `FUN name(args) -> body` (single-expression arrow form)
-- **Classes** with `CLASS Name BEGIN ... END`, accessed via dot notation
+- **A type for every variable** — five built-in types `Int`, `Dec`, `Str`, `Chr`, `Bool`, plus `List`, any class name as a type, and `Any`:
+  - **Typed declarations**: `Int x = 5`, `Str s = "hi"`, `Bool ok = TRUE`
+  - **Inferred types**: `VAR` works like Java's `var` (infers the type); `CONST` is the same but immutable
+  - **Typed function parameters**: `FUN add(Int a, Int b) -> a + b`
+  - **`typeOf(value)`** returns a value's type name; mismatched assignments/arguments raise a `Type error`
+  - Each built-in type has an auto-loaded companion class (`Int`, `Dec`, `Str`, `Chr`, `Bool`) of useful helpers
+- **Functions** with `FUN name(Type arg) -> body` or a `BEGIN ... END` block with `RETURN`
+- **Classes** with `CLASS Name BEGIN ... END`, `INIT` constructors, and `NEW` instances
 - **Modules**: `IMPORT "path/to/file.myopl"` merges another file's symbols into the current scope
 - **Control flow**: `IF / THEN / ELSE`, `FOR x = a TO b STEP s THEN`, `WHILE cond THEN`
-- **Data types**: numbers, strings, lists, booleans (via comparison)
+- **Booleans**: `TRUE` / `FALSE` keywords (typed `Bool`)
+- **Strings & chars**: the full set of Java escape sequences — `\t \b \n \r \f \s \' \" \\`, unicode `\uXXXX` and octal `\ddd`
 - **Blocks**: `BEGIN ... END` for multi-statement bodies
 - **Comments**: single-line `# ...` and multi-line `#* ... *#`
-- **Built-in I/O**: `PRINT`, `INPUT`, `INPUT_NUM`, `READ_FILE`, `WRITE_FILE`, `APPEND_FILE`, `LEN`
+- **Built-in I/O**: `PRINT`, `LEN`, `READ_FILE`, `WRITE_FILE`, `APPEND_FILE`,
+  and console input `INPUT`, `INPUT_NUM`, plus the typed readers `INPUT_STR`, `INPUT_INT`, `INPUT_DEC`, `INPUT_BOOL`, `INPUT_CHR`
 
 See [`src/main/java/Grammar.txt`](src/main/java/Grammar.txt) for the full language specification.
 
 ## Quick example
 
 ```
-# Variables and math
-VAR x = 10
-VAR y = (x * 5) / 2
-PRINT("y =", y)
+# Typed variables (VAR / CONST infer the type, like Java's var)
+Int x = 10
+Dec y = (x * 5) / 2
+VAR label = "y ="          # inferred as Str
+PRINT(label, y, typeOf(y)) # y = 25.0 Dec
 
-# Functions
-FUN square(n) -> n * n
+# Functions with typed parameters
+FUN square(Int n) -> n * n
 PRINT(square(7))
 
 # Classes
 CLASS MathUtils BEGIN
-    FUN double(n) -> n * 2
+    FUN double(Int n) -> n * 2
     VAR PI = 3.14159
 END
 PRINT(MathUtils.double(7))
@@ -38,6 +46,10 @@ PRINT(MathUtils.PI)
 
 # Loops
 FOR i = 1 TO 3 THEN PRINT("Count:", i)
+
+# Typed input
+# Int age = Int.input("Age? ")
+# PRINT("Next year you will be", age + 1)
 
 # File I/O
 WRITE_FILE("out.txt", "Hello from MyOPL!")

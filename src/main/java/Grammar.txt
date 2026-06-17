@@ -12,17 +12,20 @@ COMMENTS:
   #* ... *#       Multi-line comment. Everything between #* and *# is ignored, may span lines.
 
 STRINGS:
-  "..."           A string literal. Supports these backslash escape sequences:
-    \n            newline
-    \t            tab
-    \r            carriage return
-    \"            literal double-quote
+  "..."           A string literal. Supports the full set of Java escape sequences:
+    \t            tab                  \b      backspace
+    \n            newline              \f      form feed
+    \r            carriage return      \s      space
+    \"            literal double-quote \'      literal single-quote
     \\            literal backslash
+    \uXXXX        a unicode character given by four hex digits (e.g. A = A)
+    \ddd          a character given by one to three octal digits (\0 .. \377)
                   Any other \x is kept verbatim as the two characters \ and x.
 
 CHARACTERS:
   '...'           A character literal: exactly ONE character between single quotes.
-                  Supports the same escapes as strings (\n \t \r \\ \' \0).
+                  Supports the same escapes as strings (\t \b \n \r \f \s \' \" \\,
+                  \uXXXX and octal \ddd). An unknown escape \x is just the char x.
                   Stored as a one-character string, so it concatenates and compares
                   with strings ( 'x' == "x" is true ). Empty '' or multi-char 'ab'
                   is a lex-time error.
@@ -30,19 +33,47 @@ CHARACTERS:
 
 BOOLEANS:
   TRUE            The number 1. FALSE is the number 0.
-  FALSE           MyOPL has no separate boolean type: 0 is false and any
-                  nonzero value is true (the same convention IF / WHILE and the
-                  comparison operators use). TRUE / FALSE are just readable
-                  names you can use anywhere a number is expected.
-                    VAR done = FALSE
+  FALSE           There is a Bool TYPE (so `Bool done = FALSE` and typeOf give
+                  "Bool"), but at runtime a boolean is still just a number: 0 is
+                  false and any nonzero value is true (the same convention IF /
+                  WHILE and the comparison operators use). TRUE / FALSE are
+                  readable names you can use anywhere a number is expected, and a
+                  Bool parameter/variable also accepts any number.
+                    Bool done = FALSE
+                    VAR  ready = TRUE          # inferred as Bool
                     IF TRUE THEN PRINT("always runs")
                   The Bool class in the standard library adds logic helpers
                   (and, or, not, xor, ...). See STANDARD CLASS LIBRARY below.
 
+TYPES:
+  Every variable has a type. There are five built-in types, plus List and any
+  class name as a type, plus Any (a catch-all):
+
+    Int    whole numbers      Int  n = 5
+    Dec    decimal numbers    Dec  x = 3.14
+    Str    text               Str  s = "hello"
+    Chr    one character      Chr  c = 'A'
+    Bool   truth (TRUE/FALSE)  Bool ok = TRUE
+    List   a list             (declare with VAR, or annotate List xs = [1,2])
+    <Class> an instance       Point p = NEW Point(3, 4)
+    Any    anything           (used for generic function parameters)
+
+  Under the hood values are unchanged: Bool is still 1/0 and Chr is a
+  one-character string, so the type checks are by broad family — Int/Dec/Bool
+  all accept a number, Str/Chr accept text, a class type accepts an instance of
+  that class. Assigning the wrong family raises a "Type error".
+
+  typeOf(x)           Returns the type name of x as a string ("Int", "Str", a
+                      class name, ...). Handy for VAR/CONST-inferred variables.
+
 VARIABLES AND CONSTANTS:
-  VAR name = expr     Declares or reassigns a variable in the current scope.
-  CONST name = expr   Declares a constant. Reassigning it (with VAR or CONST)
-                      raises "Cannot reassign constant 'name'".
+  Type name = expr    Declares a variable with an explicit type, e.g. Int x = 5.
+                      A value of the wrong type raises a "Type error".
+  VAR name = expr     Declares (or reassigns) a variable and INFERS its type from
+                      the value — exactly like Java's `var`.
+  CONST name = expr   Like VAR (the type is inferred) but the binding is immutable:
+                      reassigning it (with VAR, CONST or a typed form) raises
+                      "Cannot reassign constant 'name'".
   An unset identifier reads back as 0, never as an error.
 
 BUILT-IN FUNCTIONS:
@@ -50,6 +81,18 @@ BUILT-IN FUNCTIONS:
     PRINT(val1, val2...)     - Writes values to console, separated by spaces, with newline.
     INPUT(prompt?)           - Prompts (optional) and reads one line from stdin. Returns String.
     INPUT_NUM(prompt?)       - Prompts (optional) and reads one line, parsed as a Number. Bad input -> 0.
+
+  Typed input (one line each; the prompt is optional):
+    INPUT_STR(prompt?)       - Reads text.                       Returns a Str.
+    INPUT_INT(prompt?)       - Reads a whole number (bad -> 0).  Returns an Int.
+    INPUT_DEC(prompt?)       - Reads a decimal  (bad -> 0).      Returns a Dec.
+    INPUT_BOOL(prompt?)      - "true"/"yes"/"y"/"t"/"1" -> 1, else 0. Returns a Bool.
+    INPUT_CHR(prompt?)       - Reads the first character typed.  Returns a Chr.
+    (Also available as Int.input(p), Dec.input(p), Str.input(p), Bool.input(p),
+     Chr.input(p) and on the Console class.)
+
+  Types:
+    typeOf(value)            - Returns the type name of `value` as a Str.
 
   Files:
     READ_FILE(path)          - Reads the file at `path` and returns its full contents as a String.
@@ -83,12 +126,14 @@ OPERATORS:
 
 GRAMMAR:
   Expression -> VAR ID = Expr | CONST ID = Expr
+                | TYPE ID = Expr                      # typed declaration, e.g. Int x = 5
                 | IF Expr THEN Expr (ELSE Expr)?      # ELSE may itself be an IF -> "else if"
                 | FOR ID = Expr TO Expr (STEP Expr)? THEN Expr
                 | WHILE Expr THEN Expr | RETURN Expr?
                 | CLASS ID BEGIN Expr* END
                 | IMPORT STRING
                 | Comparison
+  TYPE       -> Int | Dec | Str | Chr | Bool | List | Any | ID   # ID = a class name
   Comparison -> Arithmetic ((EE | NE | LT | GT | LTE | GTE) Arithmetic)*
   Arithmetic -> Term ((PLUS | MINUS) Term)*
   Term       -> Unary ((MUL | DIV) Unary)*
@@ -96,10 +141,10 @@ GRAMMAR:
   Factor     -> Atom ( (args) | .ID )*
   Atom       -> INT | FLOAT | STRING | CHAR | TRUE | FALSE | ID | [list] | (Expr)
                 | FunDef | Constructor | NewExpr | BEGIN Expr* END
-  FunDef     -> FUN ID? ( ( ID (, ID)* )? )
+  FunDef     -> FUN ID? ( ( TYPE ID (, TYPE ID)* )? )   # every parameter is 'Type name'
                   ( -> Expr            # single-line: body is the returned expression
                   | BEGIN Expr* END )  # multi-line:  body is a block, use RETURN to yield
-  Constructor-> INIT ( ( ID (, ID)* )? )
+  Constructor-> INIT ( ( TYPE ID (, TYPE ID)* )? )
                   ( -> Expr | BEGIN Expr* END )   # only inside a CLASS body
   NewExpr    -> NEW ID ( ( Expr (, Expr)* )? )    # instantiate a class into an object
 
@@ -107,19 +152,23 @@ GRAMMAR:
       FUNCTIONS
 =========================================
 
-Functions are defined with FUN and can be written in two forms.
+Functions are defined with FUN and can be written in two forms. EVERY parameter
+must declare a type, written as 'Type name' (the type before the name). Calling a
+function with an argument of the wrong type raises a "Type error". Use Any for a
+parameter that may receive any type.
 
 SINGLE-LINE (arrow):
-  FUN name(args) -> expression
+  FUN name(Type arg, ...) -> expression
   - The expression after -> is evaluated and returned automatically.
   - The body may span lines visually, but it is a single expression.
 
   EXAMPLES:
-    FUN square(n) -> n * n
-    FUN status(v) -> IF v > 20 THEN "High" ELSE "Low"
+    FUN square(Int n) -> n * n
+    FUN status(Dec v) -> IF v > 20 THEN "High" ELSE "Low"
+    FUN randomFunction(Int x) -> x * 2
 
 MULTI-LINE (block, terminated by END):
-  FUN name(args)
+  FUN name(Type arg, ...)
       statement
       statement
       ...
@@ -244,12 +293,20 @@ AUTO-LOADED (no IMPORT needed):
   Every file in SCL/STD/ is loaded at startup, so its class is available
   immediately. The scan is NON-recursive (only files directly in SCL/STD/).
 
+    Int        - companion class for the Int type: of, abs, sign, min, max, clamp,
+                 isEven, isOdd, pow, mod, factorial, gcd, lcm, toString, input
+    Dec        - companion class for the Dec type: floor, ceil, round, trunc, frac,
+                 abs, sign, sqrt, pow, min, max, clamp, lerp, approxEqual, input
+    Str        - companion class for the Str type: isEmpty, equals, concat, surround,
+                 repeat, line, quote, of, input
+    Chr        - companion class for the Chr type: equals, isVowel, isDigit, repeat,
+                 toString, input
     Math       - constants (PI, E, TAU, PHI, SQRT2, LN2, LN10; lowercase aliases
                  too) and numeric helpers: abs, sign, min, max, clamp, sqrt, pow,
                  mod, floor, ceil, round, factorial, gcd, lcm, isPositive,
                  isNegative, isZero, approxEqual, lerp, remap, ...
-    Bool       - TRUE / FALSE plus logic: not, and, or, xor, nand, nor, implies,
-                 iff, toString, ...
+    Bool       - companion class for the Bool type. TRUE / FALSE plus logic: not,
+                 and, or, xor, nand, nor, implies, iff, toString, parse, input, ...
     Compare    - eq, neq, lt, gt, lte, gte, between, inRange, max3, min3, clamp,
                  approxEqual
     Convert    - unit conversions (temperature, length, mass, time, angle, data)

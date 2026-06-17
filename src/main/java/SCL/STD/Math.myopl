@@ -16,14 +16,14 @@ CLASS Math BEGIN
    CONST ln2 = 0.69314718055994
    CONST ln10 = 2.30258509299404
 
-   FUN abs(n) BEGIN
+   FUN abs(Dec n) BEGIN
       IF n < 0 THEN
          RETURN 0 - n
       ELSE
          RETURN n
    END
 
-   FUN sign(n) BEGIN
+   FUN sign(Dec n) BEGIN
       IF n == 0 THEN
          RETURN 0
       ELSE IF n > 0 THEN
@@ -32,21 +32,21 @@ CLASS Math BEGIN
          RETURN -1
    END
 
-   FUN min(a,b) BEGIN
+   FUN min(Dec a, Dec b) BEGIN
       IF a < b THEN
          RETURN a
       ELSE
          RETURN b
    END
 
-   FUN max(a,b) BEGIN
+   FUN max(Dec a, Dec b) BEGIN
       IF a > b THEN
          RETURN a
       ELSE
          RETURN b
    END
 
-   FUN clamp(n,lo,hi) BEGIN
+   FUN clamp(Dec n, Dec lo, Dec hi) BEGIN
       IF n < lo THEN
          RETURN lo
       ELSE IF n > hi THEN
@@ -55,41 +55,41 @@ CLASS Math BEGIN
          RETURN n
    END
 
-   FUN negate(n) BEGIN
+   FUN negate(Dec n) BEGIN
       RETURN 0 - n
    END
 
-   FUN half(n) BEGIN
+   FUN half(Dec n) BEGIN
       RETURN n / 2
    END
 
-   FUN square(n) BEGIN
+   FUN square(Dec n) BEGIN
       RETURN n * n
    END
 
-   FUN cube(n) BEGIN
+   FUN cube(Dec n) BEGIN
       RETURN n * n * n
    END
 
-   FUN average(a,b) BEGIN
+   FUN average(Dec a, Dec b) BEGIN
       RETURN (a+b)/2
    END
 
-   FUN isPos(n) BEGIN
+   FUN isPos(Dec n) BEGIN
       IF n > 0 THEN
          RETURN 1
       ELSE
          RETURN 0
    END
 
-   FUN isNeg(n) BEGIN
+   FUN isNeg(Dec n) BEGIN
       IF n < 0 THEN
          RETURN 1
       ELSE
          RETURN 0
    END
 
-   FUN isZero(n) BEGIN
+   FUN isZero(Dec n) BEGIN
       IF n == 0 THEN
          RETURN 1
       ELSE
@@ -97,14 +97,14 @@ CLASS Math BEGIN
    END
 
    # spec-named aliases for the three sign checks above
-   FUN isPositive(n) BEGIN
+   FUN isPositive(Dec n) BEGIN
       IF n > 0 THEN
          RETURN 1
       ELSE
          RETURN 0
    END
 
-   FUN isNegative(n) BEGIN
+   FUN isNegative(Dec n) BEGIN
       IF n < 0 THEN
          RETURN 1
       ELSE
@@ -112,29 +112,29 @@ CLASS Math BEGIN
    END
 
    # 1 if a and b are within eps of each other, else 0
-   FUN approxEqual(a, b, eps) BEGIN
+   FUN approxEqual(Dec a, Dec b, Dec eps) BEGIN
       IF abs(a - b) <= eps THEN
          RETURN 1
       ELSE
          RETURN 0
    END
 
-   FUN lerp(a,b,t) BEGIN
+   FUN lerp(Dec a, Dec b, Dec t) BEGIN
       RETURN (a + (b - a) * t)
    END
 
-   FUN inverseLerp(a,b,v) BEGIN
+   FUN inverseLerp(Dec a, Dec b, Dec v) BEGIN
       RETURN ((v - a) / (b - a))
    END
 
-   FUN remap(v,inLo,inHi,outLo,outHi) BEGIN
+   FUN remap(Dec v, Dec inLo, Dec inHi, Dec outLo, Dec outHi) BEGIN
       RETURN (outLo + (outHi - outLo) * ((v - inLo) / (inHi - inLo)))
    END
 
    # --- rounding (loop-based: meant for modest magnitudes) ---
 
    # largest whole number <= n  (works for negatives: floor(-2.5) = -3)
-   FUN floor(n) BEGIN
+   FUN floor(Dec n) BEGIN
       VAR i = 0
       IF n >= 0 THEN BEGIN
          WHILE i + 1 <= n THEN BEGIN
@@ -149,17 +149,17 @@ CLASS Math BEGIN
    END
 
    # smallest whole number >= n
-   FUN ceil(n) BEGIN
+   FUN ceil(Dec n) BEGIN
       RETURN -floor(-n)
    END
 
    # nearest whole number, halves round up:  round(2.5) = 3, round(-2.5) = -2
-   FUN round(n) BEGIN
+   FUN round(Dec n) BEGIN
       RETURN floor(n + 0.5)
    END
 
    # whole part toward zero:  trunc(2.9) = 2, trunc(-2.9) = -2
-   FUN trunc(n) BEGIN
+   FUN trunc(Dec n) BEGIN
       IF n >= 0 THEN
          RETURN floor(n)
       ELSE
@@ -167,17 +167,17 @@ CLASS Math BEGIN
    END
 
    # fractional part in [0, 1):  frac(2.25) = 0.25
-   FUN frac(n) BEGIN
+   FUN frac(Dec n) BEGIN
       RETURN n - floor(n)
    END
 
    # a mod b  (floored modulo; result takes the sign of b)
-   FUN mod(a, b) BEGIN
+   FUN mod(Dec a, Dec b) BEGIN
       RETURN a - floor(a / b) * b
    END
 
    # 1 if n is even, else 0  (n should be a whole number)
-   FUN isEven(n) BEGIN
+   FUN isEven(Int n) BEGIN
       IF mod(n, 2) == 0 THEN
          RETURN 1
       ELSE
@@ -185,7 +185,7 @@ CLASS Math BEGIN
    END
 
    # 1 if n is odd, else 0
-   FUN isOdd(n) BEGIN
+   FUN isOdd(Int n) BEGIN
       IF mod(n, 2) == 0 THEN
          RETURN 0
       ELSE
@@ -195,7 +195,7 @@ CLASS Math BEGIN
    # --- powers and roots ---
 
    # base raised to a WHOLE exponent (negative exponent allowed)
-   FUN pow(base, exp) BEGIN
+   FUN pow(Dec base, Int exp) BEGIN
       IF exp == 0 THEN
          RETURN 1
       IF exp < 0 THEN
@@ -210,7 +210,7 @@ CLASS Math BEGIN
    END
 
    # square root via Newton's method (returns 0 for n <= 0)
-   FUN sqrt(n) BEGIN
+   FUN sqrt(Dec n) BEGIN
       IF n <= 0 THEN
          RETURN 0
       VAR guess = n
@@ -223,12 +223,12 @@ CLASS Math BEGIN
    END
 
    # length of the hypotenuse: sqrt(a*a + b*b)
-   FUN hypot(a, b) BEGIN
+   FUN hypot(Dec a, Dec b) BEGIN
       RETURN sqrt(a * a + b * b)
    END
 
    # straight-line distance between (x1,y1) and (x2,y2)
-   FUN distance(x1, y1, x2, y2) BEGIN
+   FUN distance(Dec x1, Dec y1, Dec x2, Dec y2) BEGIN
       VAR dx = x2 - x1
       VAR dy = y2 - y1
       RETURN sqrt(dx * dx + dy * dy)
@@ -237,7 +237,7 @@ CLASS Math BEGIN
    # --- number theory ---
 
    # n!  (factorial; factorial(0) = 1)
-   FUN factorial(n) BEGIN
+   FUN factorial(Int n) BEGIN
       VAR result = 1
       VAR i = 2
       WHILE i <= n THEN BEGIN
@@ -248,7 +248,7 @@ CLASS Math BEGIN
    END
 
    # greatest common divisor (Euclid's algorithm)
-   FUN gcd(a, b) BEGIN
+   FUN gcd(Int a, Int b) BEGIN
       VAR x = abs(a)
       VAR y = abs(b)
       WHILE y > 0 THEN BEGIN
@@ -260,7 +260,7 @@ CLASS Math BEGIN
    END
 
    # least common multiple
-   FUN lcm(a, b) BEGIN
+   FUN lcm(Int a, Int b) BEGIN
       IF a == 0 THEN
          RETURN 0
       IF b == 0 THEN
@@ -271,25 +271,25 @@ CLASS Math BEGIN
    # --- misc helpers ---
 
    # 1 / n
-   FUN reciprocal(n) BEGIN
+   FUN reciprocal(Dec n) BEGIN
       RETURN 1 / n
    END
 
    # clamp n into [0, 1]
-   FUN clamp01(n) BEGIN
+   FUN clamp01(Dec n) BEGIN
       RETURN clamp(n, 0, 1)
    END
 
    # smallest / largest of three
-   FUN min3(a, b, c) -> min(a, min(b, c))
-   FUN max3(a, b, c) -> max(a, max(b, c))
+   FUN min3(Dec a, Dec b, Dec c) -> min(a, min(b, c))
+   FUN max3(Dec a, Dec b, Dec c) -> max(a, max(b, c))
 
    # degrees <-> radians
-   FUN toRadians(deg) BEGIN
+   FUN toRadians(Dec deg) BEGIN
       RETURN deg * pi / 180
    END
 
-   FUN toDegrees(rad) BEGIN
+   FUN toDegrees(Dec rad) BEGIN
       RETURN rad * 180 / pi
    END
 END
