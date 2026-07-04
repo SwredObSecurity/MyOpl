@@ -1,7 +1,7 @@
 #*
   MyOPL feature tour — every language feature in one runnable file.
-  Each PRINT notes its expected output. Runs non-interactively
-  (the INPUT examples in sections 14 and 23 are commented out on purpose).
+  Each PRINT notes its expected output. Sections 14, 23 and 25 are
+  interactive: they read from the console and open windows/dialogs.
 *#
 
 # 1. Variables and Math
@@ -80,12 +80,11 @@ PRINT("File contents after WRITE_FILE:", READ_FILE(path))
 APPEND_FILE(path, " Appended line.")
 PRINT("File contents after APPEND_FILE:", READ_FILE(path))
 
-# 14. Console I/O (commented out so this file runs non-interactively).
-#     Uncomment to try in the REPL or a script.
-# VAR userName = INPUT("Enter your name: ")
-# PRINT("Hello", userName)
-# VAR userAge = INPUT_NUM("Enter your age: ")
-# IF userAge >= 18 THEN PRINT("Adult") ELSE PRINT("Minor")
+# 14. Console I/O — reads a line from the user (interactive)
+VAR userName = INPUT("Enter your name: ")
+PRINT("Hello", userName)
+VAR userAge = INPUT_NUM("Enter your age: ")
+IF userAge >= 18 THEN PRINT("Adult") ELSE PRINT("Minor")
 
 # 15. Classes — static-style use (call methods/fields straight off the class)
 CLASS Calculator BEGIN
@@ -216,15 +215,15 @@ PRINT("Str.isEmpty('')   (Expected 1.0):", Str.isEmpty(""))
 PRINT("Chr.isVowel('e')  (Expected 1.0):", Chr.isVowel('e'))
 PRINT("Bool.toYesNo(T)   (Expected yes):", Bool.toYesNo(TRUE))
 
-# 23. TYPED INPUT — read each type from the user (commented out: non-interactive).
+# 23. TYPED INPUT — read each type from the user (interactive).
 #     Built-ins: INPUT_STR, INPUT_INT, INPUT_DEC, INPUT_BOOL, INPUT_CHR
 #     Or via the companion classes / Console:
-# Str  who  = Str.input("Name? ")
-# Int  age  = Int.input("Age? ")
-# Dec  temp = Dec.input("Temperature? ")
-# Bool ok   = Bool.input("Continue (yes/no)? ")
-# Chr  pick = Chr.input("Pick a letter: ")
-# PRINT("You entered:", who, age, temp, ok, pick)
+Str  who  = Str.input("Name? ")
+Int  age  = Int.input("Age? ")
+Dec  temp = Dec.input("Temperature? ")
+Bool ok   = Bool.input("Continue (yes/no)? ")
+Chr  pick = Chr.input("Pick a letter: ")
+PRINT("You entered:", who, age, temp, ok, pick)
 
 # 24. CUSTOM TYPES — aliases, enums, inheritance, interfaces and generics.
 
@@ -271,9 +270,8 @@ PRINT("Generic list typeOf (Expected List<Int>):", typeOf(scores))
 PRINT("Generic list LEN (Expected 3.0):", LEN(scores))
 
 # 25. GUI — Frame and OptionPane mirror Java's JFrame and JOptionPane.
-#     These need IMPORT (they are not auto-loaded). We build a window and read
-#     it back WITHOUT showing it, so this tour still runs unattended. The
-#     commented lines below open real windows/dialogs — uncomment to try them.
+#     These need IMPORT (they are not auto-loaded). This opens a real window
+#     and real pop-up dialogs, so it needs a desktop and blocks for input.
 IMPORT "SCL/Frame.myopl"
 IMPORT "SCL/OptionPane.myopl"
 VAR window = NEW Frame("MyOPL Window")
@@ -284,8 +282,8 @@ window.center()
 PRINT("Frame.getTitle (Expected MyOPL Window):", window.getTitle())
 PRINT("Frame.isVisible before show (Expected 0.0):", window.isVisible())
 PRINT("OptionPane.YES / NO / CANCEL (Expected 0.0 1.0 2.0):", OptionPane.YES, OptionPane.NO, OptionPane.CANCEL)
+window.setVisible(TRUE)                            # opens the window
+OptionPane.showMessageDialog("Hello, world!")      # opens a pop-up
+Str guest = OptionPane.showInputDialog("Your name?")
+IF OptionPane.askYesNo("Quit now?") THEN PRINT("bye")
 window.dispose()
-# window.setVisible(TRUE)                          # <- opens the window
-# OptionPane.showMessageDialog("Hello, world!")    # <- opens a pop-up
-# Str who = OptionPane.showInputDialog("Your name?")
-# IF OptionPane.askYesNo("Quit now?") THEN PRINT("bye")
