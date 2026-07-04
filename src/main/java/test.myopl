@@ -269,3 +269,23 @@ PRINT("Interface (Expected I am R2):", introduce(NEW Robot()))
 List<Int> scores = [10, 20, 30]
 PRINT("Generic list typeOf (Expected List<Int>):", typeOf(scores))
 PRINT("Generic list LEN (Expected 3.0):", LEN(scores))
+
+# 25. GUI — Frame and OptionPane mirror Java's JFrame and JOptionPane.
+#     These need IMPORT (they are not auto-loaded). We build a window and read
+#     it back WITHOUT showing it, so this tour still runs unattended. The
+#     commented lines below open real windows/dialogs — uncomment to try them.
+IMPORT "SCL/Frame.myopl"
+IMPORT "SCL/OptionPane.myopl"
+VAR window = NEW Frame("MyOPL Window")
+window.setSize(320, 200)
+window.addLabel("Hello from MyOPL!")
+window.addButton("OK")
+window.center()
+PRINT("Frame.getTitle (Expected MyOPL Window):", window.getTitle())
+PRINT("Frame.isVisible before show (Expected 0.0):", window.isVisible())
+PRINT("OptionPane.YES / NO / CANCEL (Expected 0.0 1.0 2.0):", OptionPane.YES, OptionPane.NO, OptionPane.CANCEL)
+window.dispose()
+# window.setVisible(TRUE)                          # <- opens the window
+# OptionPane.showMessageDialog("Hello, world!")    # <- opens a pop-up
+# Str who = OptionPane.showInputDialog("Your name?")
+# IF OptionPane.askYesNo("Quit now?") THEN PRINT("bye")

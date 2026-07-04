@@ -389,6 +389,8 @@ NEEDS IMPORT (top-level SCL/, not auto-loaded):
     SCL/FileIO.myopl   - read, write, append, clear, copy, writeAndConfirm
     SCL/Random.myopl   - seedable pseudo-random generator (deterministic per seed)
     SCL/List.myopl     - growable ordered list (ArrayList-like)
+    SCL/Frame.myopl    - a window, modelled on Java's JFrame (GUI)
+    SCL/OptionPane.myopl - pop-up dialogs, modelled on Java's JOptionPane (GUI)
 
     IMPORT "SCL/Geometry.myopl"
     PRINT(Geometry.distance2D(0, 0, 3, 4))      # 5.0
@@ -397,6 +399,40 @@ NEEDS IMPORT (top-level SCL/, not auto-loaded):
     VAR xs = NEW List()
     xs.add(10)  xs.add(20)
     PRINT(xs.get(1))                            # 20.0
+
+=========================================
+      GUI: Frame and OptionPane
+=========================================
+Two SCL classes wrap Java Swing so MyOPL can open real windows and dialogs.
+They behave like their Java namesakes; IMPORT them before use.
+
+  Frame  (like javax.swing.JFrame) -- a top-level window; make one with NEW:
+    IMPORT "SCL/Frame.myopl"
+    VAR win = NEW Frame("My App")          # or NEW Frame() for no title
+    win.setSize(320, 200)
+    win.addLabel("Hello, world!")          # a JLabel
+    win.addButton("OK")                    # a JButton (no click handler yet)
+    win.center()                           # centre on screen
+    win.setVisible(TRUE)                   # show it (or win.show())
+    # win.setTitle(t) getTitle() isVisible() clear() pack() hide() dispose()
+    # win.setDefaultCloseOperation(win.EXIT_ON_CLOSE)
+    #   close consts: DO_NOTHING_ON_CLOSE, HIDE_ON_CLOSE, DISPOSE_ON_CLOSE, EXIT_ON_CLOSE
+    # The default layout is FlowLayout; the default close action is DISPOSE.
+
+  OptionPane  (like javax.swing.JOptionPane) -- pop-up dialogs; no NEW needed:
+    IMPORT "SCL/OptionPane.myopl"
+    OptionPane.showMessageDialog("Saved!")          # OK pop-up
+    OptionPane.showError("Something broke")          # error icon
+    Str name = OptionPane.showInputDialog("Name?")   # text entry; Cancel -> ""
+    Int a = OptionPane.showConfirmDialog("Quit?")    # returns YES/NO/CANCEL/CLOSED
+    IF OptionPane.askYesNo("Continue?") THEN PRINT("yes")
+    # message-type consts: ERROR_MESSAGE, INFORMATION_MESSAGE, WARNING_MESSAGE,
+    #                      QUESTION_MESSAGE, PLAIN_MESSAGE
+    # option-set consts:   YES_NO_OPTION, YES_NO_CANCEL_OPTION, OK_CANCEL_OPTION
+    # answer consts:       YES/OK (0), NO (1), CANCEL (2), CLOSED (-1)
+
+  Note: showMessageDialog/showInputDialog/showConfirmDialog are MODAL -- they
+  block until the user responds, exactly like JOptionPane.
 
 =========================================
       HOW TO RUN

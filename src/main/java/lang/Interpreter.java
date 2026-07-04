@@ -2,6 +2,8 @@ package lang;
 import java.util.*;
 import java.util.stream.Stream;
 import java.nio.file.*;
+import javax.swing.*;
+import java.awt.FlowLayout;
 
 public class Interpreter {
     private Map<String, Object> symbols = new HashMap<>();
@@ -34,8 +36,19 @@ public class Interpreter {
 
     private static final Set<String> BUILTINS = Set.of(
         "PRINT", "LEN", "INPUT", "INPUT_NUM", "READ_FILE", "WRITE_FILE", "APPEND_FILE", "typeOf",
-        "INPUT_STR", "INPUT_INT", "INPUT_DEC", "INPUT_BOOL", "INPUT_CHR"
+        "INPUT_STR", "INPUT_INT", "INPUT_DEC", "INPUT_BOOL", "INPUT_CHR",
+        // --- Swing GUI bridge (used by the Frame and OptionPane companion classes) ---
+        "MSG_BOX", "INPUT_BOX", "CONFIRM_BOX",
+        "FRAME_NEW", "FRAME_SET_TITLE", "FRAME_GET_TITLE", "FRAME_SET_SIZE",
+        "FRAME_SET_VISIBLE", "FRAME_IS_VISIBLE", "FRAME_SET_CLOSE", "FRAME_ADD_LABEL",
+        "FRAME_ADD_BUTTON", "FRAME_CLEAR", "FRAME_CENTER", "FRAME_PACK", "FRAME_DISPOSE"
     );
+
+    /** Live Swing windows created by the Frame companion class, keyed by the handle
+     *  each Frame instance stores. Keeping the real JFrame in Java lets MyOPL Frame
+     *  methods mutate the same window across calls. */
+    private final Map<Double, JFrame> frames = new HashMap<>();
+    private double nextFrameId = 1.0;
 
     public Interpreter() { registerBuiltins(); }
     public Interpreter(String baseDir) { this.baseDir = baseDir; registerBuiltins(); }
@@ -353,6 +366,68 @@ public class Interpreter {
                     return 1.0;
                 } catch (Exception e) { throw new RuntimeException("APPEND_FILE failed: " + e.getMessage()); }
             }
+
+            // --- Swing GUI bridge -------------------------------------------------
+            // JOptionPane-style dialogs. Message/option-type ints mirror Java's
+            // constants (see the OptionPane companion class).
+            if (bi.name().equals("MSG_BOX")) {
+                List<Object> a = evalArgs(call);
+                String  message = a.size() > 0 ? String.valueOf(a.get(0)) : "";
+                String  title   = a.size() > 1 ? String.valueOf(a.get(1)) : "Message";
+                int     type    = a.size() > 2 ? (int) toNum(a.get(2)) : JOptionPane.INFORMATION_MESSAGE;
+                JOptionPane.showMessageDialog(null, message, title, type);
+                return null;
+            }
+            if (bi.name().equals("INPUT_BOX")) {
+                List<Object> a = evalArgs(call);
+                String message = a.size() > 0 ? String.valueOf(a.get(0)) : "";
+                String title   = a.size() > 1 ? String.valueOf(a.get(1)) : "Input";
+                Object initial = a.size() > 2 ? a.get(2) : "";
+                String res = (String) JOptionPane.showInputDialog(null, message, title,
+                        JOptionPane.QUESTION_MESSAGE, null, null, String.valueOf(initial));
+                return res == null ? "" : res;      // Cancel/close -> "" (no null value in MyOPL)
+            }
+            if (bi.name().equals("CONFIRM_BOX")) {
+                List<Object> a = evalArgs(call);
+                String message = a.size() > 0 ? String.valueOf(a.get(0)) : "";
+                String title   = a.size() > 1 ? String.valueOf(a.get(1)) : "Confirm";
+                int    option  = a.size() > 2 ? (int) toNum(a.get(2)) : JOptionPane.YES_NO_CANCEL_OPTION;
+                return (double) JOptionPane.showConfirmDialog(null, message, title, option);
+            }
+
+            // JFrame-style windows. Every op takes the frame handle as its first arg.
+            if (bi.name().equals("FRAME_NEW")) {
+                List<Object> a = evalArgs(call);
+                String title = (!a.isEmpty() && a.get(0) instanceof String s) ? s : "";
+                JFrame f = new JFrame(title);
+                f.setLayout(new FlowLayout());
+                f.setSize(400, 300);
+                f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                double id = nextFrameId++;
+                frames.put(id, f);
+                return id;
+            }
+            if (bi.name().startsWith("FRAME_")) {
+                List<Object> a = evalArgs(call);
+                JFrame f = a.isEmpty() ? null : frames.get(toNum(a.get(0)));
+                if (f == null) throw new RuntimeException(bi.name() + ": no such window (was it disposed?)");
+                switch (bi.name()) {
+                    case "FRAME_SET_TITLE"   -> f.setTitle(a.get(1) instanceof String s ? s : "");
+                    case "FRAME_GET_TITLE"   -> { return f.getTitle(); }
+                    case "FRAME_SET_SIZE"    -> f.setSize((int) toNum(a.get(1)), (int) toNum(a.get(2)));
+                    case "FRAME_SET_VISIBLE" -> f.setVisible(toNum(a.get(1)) != 0);
+                    case "FRAME_IS_VISIBLE"  -> { return f.isVisible() ? 1.0 : 0.0; }
+                    case "FRAME_SET_CLOSE"   -> f.setDefaultCloseOperation((int) toNum(a.get(1)));
+                    case "FRAME_ADD_LABEL"   -> { f.add(new JLabel(String.valueOf(a.get(1)))); f.revalidate(); f.repaint(); }
+                    case "FRAME_ADD_BUTTON"  -> { f.add(new JButton(String.valueOf(a.get(1)))); f.revalidate(); f.repaint(); }
+                    case "FRAME_CLEAR"       -> { f.getContentPane().removeAll(); f.revalidate(); f.repaint(); }
+                    case "FRAME_CENTER"      -> f.setLocationRelativeTo(null);
+                    case "FRAME_PACK"        -> f.pack();
+                    case "FRAME_DISPOSE"     -> { f.dispose(); frames.remove(toNum(a.get(0))); }
+                    default -> throw new RuntimeException("Unknown frame op: " + bi.name());
+                }
+                return null;
+            }
         }
 
         if (callable instanceof BoundMethod bm) {
@@ -414,6 +489,21 @@ public class Interpreter {
             symbols.put(pname, val);
             if (ptype != null) varTypes.put(pname, ptype);
         }
+    }
+
+    /** Evaluate every argument of a call, in order, in the current scope. */
+    private List<Object> evalArgs(CallNode call) {
+        List<Object> out = new ArrayList<>();
+        for (Node n : call.argNodes()) out.add(visit(n));
+        return out;
+    }
+
+    /** Best-effort numeric view of a MyOPL value (Double as-is, bool/anything else -> 0). */
+    private double toNum(Object v) {
+        if (v instanceof Double d) return d;
+        if (v instanceof Boolean b) return b ? 1.0 : 0.0;
+        if (v instanceof String s) { try { return Double.parseDouble(s.trim()); } catch (Exception e) { return 0.0; } }
+        return 0.0;
     }
 
     /** Print the optional prompt argument (if any) and read one line from stdin. */

@@ -1,0 +1,74 @@
+#*
+   Frame — MyOPL's take on Java's javax.swing.JFrame.
+
+   A top-level window. Make one with NEW, set it up, then show it — exactly
+   like a JFrame in Java:
+
+       IMPORT "Frame.myopl"
+
+       VAR win = NEW Frame("My App")
+       win.setSize(320, 200)
+       win.addLabel("Hello, world!")
+       win.addButton("OK")
+       win.center()
+       win.setVisible(TRUE)
+
+   Behind the scenes each Frame owns a real Swing JFrame; the methods below
+   drive it. The default layout is a FlowLayout and the default close action
+   is DISPOSE (closing the window frees it) — the same feel as a basic JFrame.
+*#
+CLASS Frame BEGIN
+
+   # the native window handle (set by INIT); do not change by hand
+   VAR handle = 0
+
+   # --- setDefaultCloseOperation constants (like JFrame.*_ON_CLOSE) ---
+   CONST DO_NOTHING_ON_CLOSE = 0
+   CONST HIDE_ON_CLOSE       = 1
+   CONST DISPOSE_ON_CLOSE    = 2
+   CONST EXIT_ON_CLOSE       = 3
+
+   # NEW Frame()  or  NEW Frame("Title")
+   INIT(Str title) BEGIN
+      VAR handle = FRAME_NEW(title)
+   END
+
+   # --- window properties -----------------------------------------------------
+
+   FUN setTitle(Str title)      -> FRAME_SET_TITLE(handle, title)
+   FUN getTitle()               -> FRAME_GET_TITLE(handle)
+   FUN setSize(Int w, Int h)    -> FRAME_SET_SIZE(handle, w, h)
+   FUN setVisible(Bool visible) -> FRAME_SET_VISIBLE(handle, visible)
+   FUN isVisible()              -> FRAME_IS_VISIBLE(handle)
+
+   # what happens when the user closes the window (see the *_ON_CLOSE consts)
+   FUN setDefaultCloseOperation(Int op) -> FRAME_SET_CLOSE(handle, op)
+
+   # centre the window on the screen (JFrame's setLocationRelativeTo(null))
+   FUN center() -> FRAME_CENTER(handle)
+
+   # shrink the window to fit its contents (JFrame.pack)
+   FUN pack() -> FRAME_PACK(handle)
+
+   # --- contents --------------------------------------------------------------
+
+   # add a line of text  (a JLabel)
+   FUN addLabel(Str text) -> FRAME_ADD_LABEL(handle, text)
+
+   # add a push button  (a JButton; it shows but has no click handler yet)
+   FUN addButton(Str text) -> FRAME_ADD_BUTTON(handle, text)
+
+   # remove everything from the window
+   FUN clear() -> FRAME_CLEAR(handle)
+
+   # --- lifecycle -------------------------------------------------------------
+
+   # show the window (shortcut for setVisible(TRUE))
+   FUN show() -> FRAME_SET_VISIBLE(handle, 1)
+
+   # hide the window (shortcut for setVisible(FALSE))
+   FUN hide() -> FRAME_SET_VISIBLE(handle, 0)
+
+   # close the window and free it
+   FUN dispose() -> FRAME_DISPOSE(handle)
+END

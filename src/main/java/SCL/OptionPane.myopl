@@ -1,0 +1,69 @@
+#*
+   OptionPane — MyOPL's take on Java's javax.swing.JOptionPane.
+
+   A pop-up dialog helper. Use it the same way you use JOptionPane in Java:
+   its methods are called on the class itself (no NEW needed).
+
+       IMPORT "OptionPane.myopl"
+
+       OptionPane.showMessageDialog("Saved!")
+       Str name = OptionPane.showInputDialog("Your name?")
+       Int ans  = OptionPane.showConfirmDialog("Quit?")
+       IF ans == OptionPane.YES THEN PRINT("bye")
+
+   Message types (for the 3-argument showMessageDialog) and confirm-dialog
+   option/answer codes mirror Java's JOptionPane constants exactly.
+*#
+CLASS OptionPane BEGIN
+
+   # --- message-type constants (like JOptionPane.*_MESSAGE) ---
+   CONST ERROR_MESSAGE       = 0
+   CONST INFORMATION_MESSAGE = 1
+   CONST WARNING_MESSAGE     = 2
+   CONST QUESTION_MESSAGE    = 3
+   CONST PLAIN_MESSAGE       = -1
+
+   # --- confirm-dialog option sets (like JOptionPane.*_OPTION) ---
+   CONST YES_NO_OPTION        = 0
+   CONST YES_NO_CANCEL_OPTION = 1
+   CONST OK_CANCEL_OPTION     = 2
+
+   # --- answer codes returned by showConfirmDialog ---
+   CONST YES    = 0
+   CONST OK     = 0
+   CONST NO     = 1
+   CONST CANCEL = 2
+   CONST CLOSED = -1
+
+   # --- message dialogs -------------------------------------------------------
+
+   # a plain information pop-up with an OK button
+   FUN showMessageDialog(Str message) -> MSG_BOX(message, "Message", INFORMATION_MESSAGE)
+
+   # a message pop-up with a custom title and message type (see the *_MESSAGE consts)
+   FUN showMessage(Str message, Str title, Int messageType) -> MSG_BOX(message, title, messageType)
+
+   # convenience wrappers for the common icons
+   FUN showError(Str message)   -> MSG_BOX(message, "Error",   ERROR_MESSAGE)
+   FUN showWarning(Str message) -> MSG_BOX(message, "Warning", WARNING_MESSAGE)
+   FUN showInfo(Str message)    -> MSG_BOX(message, "Message", INFORMATION_MESSAGE)
+
+   # --- input dialogs ---------------------------------------------------------
+
+   # ask the user for a line of text; Cancel/close returns "" (empty string)
+   FUN showInputDialog(Str message) -> INPUT_BOX(message, "Input", "")
+
+   # same, but with a custom title and a pre-filled default answer
+   FUN showInput(Str message, Str title, Str initial) -> INPUT_BOX(message, title, initial)
+
+   # --- confirm dialogs -------------------------------------------------------
+
+   # Yes/No/Cancel question; returns YES / NO / CANCEL / CLOSED
+   FUN showConfirmDialog(Str message) -> CONFIRM_BOX(message, "Confirm", YES_NO_CANCEL_OPTION)
+
+   # confirm with a custom title and option set (see the *_OPTION consts)
+   FUN showConfirm(Str message, Str title, Int optionType) -> CONFIRM_BOX(message, title, optionType)
+
+   # a simple TRUE/FALSE helper: TRUE only if the user pressed Yes
+   FUN askYesNo(Str message) -> CONFIRM_BOX(message, "Confirm", YES_NO_OPTION) == YES
+END

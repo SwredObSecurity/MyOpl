@@ -18,6 +18,7 @@ A custom programming language built from scratch in Java. MyOpl ships with a han
   - **Inheritance**: `CLASS Dog EXTENDS Animal BEGIN … END` — subclasses override methods and satisfy a supertype parameter
   - **Interfaces**: `INTERFACE Named BEGIN … END` + `CLASS Robot IMPLEMENTS Named`
   - **Generics**: `List<Int> xs = [1, 2, 3]` — element types are checked; use `Any` for mixed contents
+- **GUI** (Swing-backed): `Frame` works like Java's `JFrame` and `OptionPane` like `JOptionPane` — real windows and pop-up dialogs (`IMPORT "SCL/Frame.myopl"`, `IMPORT "SCL/OptionPane.myopl"`)
 - **Modules**: `IMPORT "path/to/file.myopl"` merges another file's symbols into the current scope
 - **Control flow**: `IF / THEN / ELSE`, `FOR x = a TO b STEP s THEN`, `WHILE cond THEN`
 - **Booleans**: `TRUE` / `FALSE` keywords (typed `Bool`)
